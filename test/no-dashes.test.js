@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,10 +20,14 @@ test("each em or en dash is reported with its line", () => {
   );
 });
 
-test("the CLI reports a dash in an untracked file and exits 1", () => {
+test("the CLI reports a dash in an untracked file, skips links, and exits 1", (t) => {
   const repo = mkdtempSync(join(tmpdir(), "no-dashes-"));
+  t.after(() => rmSync(repo, { recursive: true, force: true }));
   execFileSync("git", ["init", "-q"], { cwd: repo });
   writeFileSync(join(repo, "note.md"), "fine\nbad \u2014 here\n");
+  mkdirSync(join(repo, "folder"));
+  symlinkSync("folder", join(repo, "folder-link"));
+  symlinkSync("loop", join(repo, "loop"));
   const run = spawnSync(process.execPath, [fileURLToPath(new URL("../checks/no-dashes.js", import.meta.url))], {
     cwd: repo,
     encoding: "utf8",
