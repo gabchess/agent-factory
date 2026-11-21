@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 const DASHES = { "\u2014": "em dash", "\u2013": "en dash" };
-const TEXT_FILE = /\.(md|js|json|ya?ml|toml|txt)$/;
 const FIXTURES = "test/fixtures/";
 
 export function findDashes(text) {
@@ -16,19 +15,22 @@ export function findDashes(text) {
   );
 }
 
-function trackedTextFiles() {
-  return execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], { encoding: "utf8" })
-    .split("\n")
-    .filter((path) => TEXT_FILE.test(path) && !path.startsWith(FIXTURES));
+function repoFiles() {
+  return execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { encoding: "utf8" })
+    .split("\0")
+    .filter((path) => path && !path.startsWith(FIXTURES));
 }
 
+const isBinary = (text) => text.includes("\0");
+
 function main() {
-  const failures = trackedTextFiles().flatMap((path) =>
-    findDashes(readFileSync(path, "utf8")).map(
+  const failures = repoFiles().flatMap((path) => {
+    const text = readFileSync(path, "utf8");
+    return isBinary(text) ? [] : findDashes(text).map(
       ({ line, column, dash }) =>
         `${path}:${line}:${column}: ${dash}. Rewrite the sentence with a comma, colon, period or parentheses. Write ranges as "44 to 51".`,
-    ),
-  );
+    );
+  });
   failures.forEach((failure) => console.error(failure));
   process.exitCode = failures.length ? 1 : 0;
 }
