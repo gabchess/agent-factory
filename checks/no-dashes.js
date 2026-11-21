@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync, statSync } from "node:fs";
+import { lstatSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 const DASHES = { "\u2014": "em dash", "\u2013": "en dash" };
@@ -21,7 +21,7 @@ function repoFiles() {
     .filter((path) => path && !path.startsWith(FIXTURES) && isFile(path));
 }
 
-const isFile = (path) => statSync(path, { throwIfNoEntry: false })?.isFile() ?? false;
+const isFile = (path) => lstatSync(path, { throwIfNoEntry: false })?.isFile() ?? false;
 
 const isBinary = (text) => text.includes("\0");
 
