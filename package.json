@@ -1,0 +1,10 @@
+{
+  "name": "agent-factory",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test",
+    "check": "node checks/no-dashes.js"
+  }
+}
