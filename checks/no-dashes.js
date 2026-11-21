@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 const DASHES = { "\u2014": "em dash", "\u2013": "en dash" };
@@ -18,8 +18,10 @@ export function findDashes(text) {
 function repoFiles() {
   return execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { encoding: "utf8" })
     .split("\0")
-    .filter((path) => path && !path.startsWith(FIXTURES) && existsSync(path));
+    .filter((path) => path && !path.startsWith(FIXTURES) && isFile(path));
 }
+
+const isFile = (path) => statSync(path, { throwIfNoEntry: false })?.isFile() ?? false;
 
 const isBinary = (text) => text.includes("\0");
 
