@@ -40,7 +40,7 @@ const fix = (state) => `snapshot is ${state}. Run \`npm run snapshot\` and commi
 export function check(repo) {
   const expected = render(repo);
   if (expected === null) return [];
-  const actual = repo.files.find(({ path }) => path === SNAPSHOT)?.text;
+  const actual = repo.files.find(({ path }) => path === SNAPSHOT)?.text.replace(/\r\n/g, "\n");
   if (actual === undefined) return [{ path: SNAPSHOT, line: 1, message: fix("missing") }];
   if (actual === expected) return [];
   const want = expected.split("\n");

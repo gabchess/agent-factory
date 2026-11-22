@@ -22,6 +22,12 @@ test("a stale snapshot fails at its first stale line with the fix", () => {
   ]);
 });
 
+test("a snapshot checked out with CRLF line endings still matches", () => {
+  const repo = fixture("instruction-snapshot", "pass");
+  const crlf = repo.files.map((file) => (file.path === SNAPSHOT ? { ...file, text: file.text.replace(/\n/g, "\r\n") } : file));
+  assert.deepEqual(check({ ...repo, files: crlf }), []);
+});
+
 test("a missing snapshot fails, and a repo with nothing an agent loads needs none", () => {
   assert.deepEqual(check(repoOf({ "AGENTS.md": "# root\n" })), [
     { path: SNAPSHOT, line: 1, message: "snapshot is missing. Run `npm run snapshot` and commit the result." },
