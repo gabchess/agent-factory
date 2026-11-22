@@ -23,7 +23,8 @@ function withItemStart(lines) {
 
 function pointers(raw, prose) {
   let end = 0;
-  return [...prose.matchAll(READ)].flatMap((read) => {
+  const scan = prose.replace(/\[[^\]]*\]/g, (label) => "x".repeat(label.length));
+  return [...scan.matchAll(READ)].flatMap((read) => {
     if (read.index < end) return [];
     TARGET.lastIndex = read.index + read[0].length;
     const match = TARGET.exec(raw);
