@@ -7,7 +7,7 @@ const EXTERNAL = /^([a-z][a-z0-9+.-]*:|#|\/\/)/i;
 
 function decode(target) {
   try {
-    return decodeURI(target);
+    return target.split("/").map(decodeURIComponent).join("/");
   } catch {
     return null;
   }

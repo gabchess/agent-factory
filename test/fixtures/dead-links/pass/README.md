@@ -32,3 +32,5 @@ A footnote[^1] resolves.
 [Build]: `npm test` runs every check.
 
 A [`code` label](docs/guide.md) resolves.
+
+An [escaped hash](docs/a%23b.md) resolves.
