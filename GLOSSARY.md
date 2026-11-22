@@ -9,6 +9,8 @@
 - **Trigger.** What starts a run: a ticket state, a schedule, a webhook or a person.
 - **Run.** One attempt at one task, recorded in `data/`.
 - **Skill.** A folder with a `SKILL.md` that teaches an agent one workflow. Names are unique across the repo.
+- **Template.** The file in `templates/` that every new artifact of one kind starts from. CI fails when a skill, agent, ADR or MCP contract drifts from its template.
+- **Instruction snapshot.** `data/instructions.snapshot`, the exact text an agent loads here. CI fails when it is stale.
 - **Check.** A script CI runs that fails on a broken rule and says how to fix it.
 - **Pointer.** A line in an `AGENTS.md` that says when to read another file: "When you X, read Y". CI fails on a pointer to a missing file or one with no "When".
 - **Fixture.** A small sample repo under `test/fixtures/<check>/` that a check must pass (`pass/`) or fail (`fail/`).
