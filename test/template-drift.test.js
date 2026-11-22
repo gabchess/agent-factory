@@ -21,6 +21,8 @@ test("an artifact that drifts from its template fails with the fix", () => {
       message: "no template at templates/agent/AGENT.md for this agent. Restore the template before adding agents.",
     },
     { path: "decisions/0002-no-evidence.md", line: 1, message: section("## Evidence", adr, "## Why, ## Evidence") },
+    { path: "decisions/0003-frontmatter-sections.md", line: 1, message: section("## Why", adr, "## Why, ## Evidence") },
+    { path: "decisions/0003-frontmatter-sections.md", line: 1, message: section("## Evidence", adr, "## Why, ## Evidence") },
     { path: "skills/a/empty-description/SKILL.md", line: 3, message: `frontmatter key "description" is empty. Fill it in the way ${skill} shows.` },
     { path: "skills/a/missing-section/LISTING.md", line: 1, message: section("## Demo", listing, "## Card, ## Demo") },
     { path: "skills/a/missing-section/SKILL.md", line: 1, message: section("## Background", skill, "## Steps, ## Background") },

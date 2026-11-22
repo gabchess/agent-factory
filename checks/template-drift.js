@@ -1,4 +1,4 @@
-import { frontmatter } from "./frontmatter.js";
+import { frontmatter, frontmatterEnd } from "./frontmatter.js";
 import { proseLines } from "./markdown.js";
 import { TEMPLATED, isA } from "./artifacts.js";
 
@@ -12,6 +12,7 @@ function headingText(raw) {
 
 const headings = (text) =>
   proseLines(text)
+    .filter(({ line }) => line > frontmatterEnd(text))
     .map(({ line, raw }) => ({ line, raw, heading: headingText(raw) }))
     .filter(({ raw, heading }) => /^ {0,3}## /.test(raw) && /^## \S/.test(heading));
 
