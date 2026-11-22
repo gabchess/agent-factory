@@ -35,3 +35,11 @@ test("the CLI reports a dash in an untracked file, skips links, and exits 1", (t
   assert.equal(run.status, 1);
   assert.match(run.stderr, /^note\.md:2:5: em dash\./);
 });
+
+test("importing the module without a script path does not run or throw", () => {
+  const module = new URL("../checks/no-dashes.js", import.meta.url).href;
+  const run = spawnSync(process.execPath, ["--input-type=module", "-e", `await import(${JSON.stringify(module)})`], {
+    encoding: "utf8",
+  });
+  assert.equal(run.status, 0, run.stderr);
+});
