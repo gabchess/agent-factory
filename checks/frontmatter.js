@@ -19,7 +19,7 @@ export const frontmatterEnd = (text) => block(text)?.end ?? 0;
 function continueValue(field, raw) {
   if (!/^\s/.test(raw) || !raw.trim()) return;
   if (field.plain && field.value === "" && NESTED.test(raw)) field.plain = false;
-  const text = field.block ? raw.trim() : field.plain ? unquote(raw.trim()) : "";
+  const text = field.block ? raw.trim() : !field.plain ? "" : field.value ? stripComment(raw.trim()) : unquote(raw.trim());
   if (text) field.value = [field.value, text].filter(Boolean).join(" ");
 }
 
