@@ -159,9 +159,16 @@ function recoverAbandonedLock(path: string, lockPath: string): number {
   try {
     recovery = openSync(recoveryPath, "wx");
   } catch {
-    throw locked;
+    if (!existsSync(recoveryPath) || lockOwnerAlive(recoveryPath)) throw locked;
+    unlinkSync(recoveryPath);
+    try {
+      recovery = openSync(recoveryPath, "wx");
+    } catch {
+      throw locked;
+    }
   }
   try {
+    writeFileSync(recovery, String(process.pid));
     if (existsSync(lockPath) && lockOwnerAlive(lockPath)) throw locked;
     if (existsSync(lockPath)) unlinkSync(lockPath);
     try {
