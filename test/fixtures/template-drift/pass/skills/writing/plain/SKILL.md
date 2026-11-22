@@ -22,6 +22,6 @@ A plain draft.
 <!-- an example comment opener
 ```
 
-## Background
+## Background <!-- why it reads plain -->
 
 <!-- a note for authors -->

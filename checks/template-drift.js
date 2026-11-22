@@ -2,20 +2,11 @@ import { frontmatter } from "./frontmatter.js";
 import { proseLines } from "./markdown.js";
 import { TEMPLATED, isA } from "./artifacts.js";
 
-const COMMENT_MARKER = /<!--|-->/g;
-
-function outsideComments(lines) {
-  let open = false;
-  return lines.filter(({ prose }) => {
-    const visible = !open;
-    for (const [marker] of prose.matchAll(COMMENT_MARKER)) open = marker === "<!--";
-    return visible;
-  });
-}
+const headingText = (raw) => raw.trimEnd().replace(/\s*<!--.*?-->$/, "").replace(/\s+#+$/, "");
 
 const headings = (text) =>
-  outsideComments(proseLines(text))
-    .map(({ line, raw }) => ({ line, heading: raw.trimEnd().replace(/\s+#+$/, "") }))
+  proseLines(text)
+    .map(({ line, raw }) => ({ line, heading: headingText(raw) }))
     .filter(({ heading }) => /^## \S/.test(heading));
 
 function shape(text) {
