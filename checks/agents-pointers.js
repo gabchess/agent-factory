@@ -1,12 +1,12 @@
 import { posix } from "node:path";
 import { proseLines } from "./markdown.js";
 
-const POINTER = /\bread\s+(?:`([^`]+)`|\[[^\]]*\](?:\([^)]*\)|\[[^\]]*\])|([\w./-]+\.md)\b)/gi;
+const READ = /\bread\s+/gi;
+const TARGET = /`([^`]+)`|\[[^\]]*\](?:\([^)]*\)|\[[^\]]*\])|([\w./-]+\.md)\b/y;
 const WHEN = /^\s*(?:[-*+]\s+|\d+\.\s+)?when\b/i;
 const CONTINUATION = /^\s+(?![-*+]\s|\d+\.\s)\S/;
 const resolves = (folder, target, contains) =>
   [target, target.replace(/[?#].*$/, "")].some((path) => contains(posix.join(folder, path)));
-const inCode = (match, prose) => prose.slice(match.index, match.index + 4).toLowerCase() !== "read";
 const isAgentsFile = (path) => posix.basename(path) === "AGENTS.md";
 
 const deadPointer = (path) =>
@@ -21,17 +21,21 @@ function withItemStart(lines) {
   });
 }
 
+function pointers(raw, prose) {
+  return [...prose.matchAll(READ)].flatMap((read) => {
+    TARGET.lastIndex = read.index + read[0].length;
+    const match = TARGET.exec(raw);
+    return match ? [{ column: read.index + 1, target: match[1] ?? match[2] }] : [];
+  });
+}
+
 function pointerFailures({ path, text }, contains) {
   const folder = posix.dirname(path);
   return withItemStart(proseLines(text)).flatMap(({ line, raw, prose, start }) =>
-    [...raw.matchAll(POINTER)].filter((match) => !inCode(match, prose)).flatMap((match) => {
-      const column = match.index + 1;
-      const target = match[1] ?? match[2];
-      return [
-        ...(target && !resolves(folder, target, contains) ? [{ path, line, column, message: deadPointer(target) }] : []),
-        ...(WHEN.test(start) ? [] : [{ path, line, column, message: NO_CONDITION }]),
-      ];
-    }),
+    pointers(raw, prose).flatMap(({ column, target }) => [
+      ...(target && !resolves(folder, target, contains) ? [{ path, line, column, message: deadPointer(target) }] : []),
+      ...(WHEN.test(start) ? [] : [{ path, line, column, message: NO_CONDITION }]),
+    ]),
   );
 }
 
