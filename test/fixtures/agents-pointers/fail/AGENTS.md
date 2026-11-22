@@ -4,3 +4,4 @@
 - Always read `GLOSSARY.md` first.
 - Always read GLOSSARY.md first.
 - When you plan, read PLAN.md.
+- Read [guide][g] first.

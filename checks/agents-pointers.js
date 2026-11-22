@@ -1,7 +1,7 @@
 import { posix } from "node:path";
 import { proseLines } from "./markdown.js";
 
-const POINTER = /\bread\s+(?:`([^`]+)`|\[[^\]]*\]\([^)]*\)|([\w./-]+\.md)\b)/gi;
+const POINTER = /\bread\s+(?:`([^`]+)`|\[[^\]]*\](?:\([^)]*\)|\[[^\]]*\])|([\w./-]+\.md)\b)/gi;
 const WHEN = /^\s*(?:[-*+]\s+|\d+\.\s+)?when\b/i;
 const CONTINUATION = /^\s+(?![-*+]\s|\d+\.\s)\S/;
 const resolves = (folder, target, contains) =>
