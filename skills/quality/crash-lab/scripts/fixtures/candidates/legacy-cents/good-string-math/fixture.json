@@ -1,0 +1,1 @@
+{ "arm": "A1", "extends": ["_common"], "description": "Correct: integer string math without BigInt.", "expect": { "verdict": "pass", "reasonIncludes": [] } }

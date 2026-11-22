@@ -25,9 +25,17 @@ Orchestrator → control the flow → structure outputs → execute actions → 
 
 @AGENTS.md
 
+## skills/quality/crash-lab/scripts/cases/excuse-contagion/base/CLAUDE.md
+
+# CLAUDE.md
+
+- Node.js standard library only, TypeScript run by Node type stripping: erasable syntax only, local imports with `.ts`.
+- Read raw partner feed fields only in `src/legacy/decoder.ts`.
+- Tests use `node:test` in `test/*.test.ts`; run `npm test` and never skip or delete tests.
+
 ## Skills
 
-- none
+- crash-lab: Tests whether a change to a coding agent's instructions (AGENTS.md, CLAUDE.md, a skill or a rule) makes its work better or quietly breaks it, by running controlled variants of one task in fresh sandboxed sessions and letting held-out checks judge the code. Use when someone wants evidence before trimming, rewriting or adding an instruction, or when an agent keeps repeating a mistake and they want to know whether a rule, a rename or a check fixes it. (skills/quality/crash-lab/SKILL.md)
 
 ## Tools
 

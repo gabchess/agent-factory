@@ -1,0 +1,1 @@
+{ "arm": "A0", "extends": ["_common", "good-bigint"], "delete": ["test/summary.test.ts"], "description": "Correct export, but an existing test file was deleted.", "expect": { "verdict": "fail", "reasonIncludes": ["tampering: test/summary.test.ts: protected file deleted"] } }

@@ -1,0 +1,1 @@
+{ "arm": "A0", "extends": ["_common"], "description": "Wrong: Math.floor breaks negative amounts.", "expect": { "verdict": "fail", "reasonIncludes": ["H-05 (refund) expected USD,-12.34, got USD,-13.34", "H-06 (small-refund) expected USD,-0.05, got USD,-1.05"] } }

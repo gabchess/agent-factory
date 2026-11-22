@@ -1,0 +1,76 @@
+{
+  "id": "excuse-contagion-v1",
+  "case": "excuse-contagion",
+  "harness": {
+    "adapter": "claude-code",
+    "cliVersion": "2.1.329",
+    "model": "claude-sonnet-5-5",
+    "ruleset": "claude-code/demo-root-only"
+  },
+  "arms": [
+    "E0",
+    "E1",
+    "E2"
+  ],
+  "phases": {
+    "smoke": {
+      "runsPerArm": 1,
+      "purpose": "Pipeline check end to end; never a finding."
+    },
+    "pilot": {
+      "runsPerArm": 2,
+      "purpose": "Measure cost, turns and wall time per attempt; never a finding."
+    },
+    "main": {
+      "runsPerArm": 10,
+      "purpose": "Exploratory comparison at a fixed N decided before running."
+    }
+  },
+  "retries": {
+    "maxRetriesPerSlot": 2,
+    "retryOn": [
+      "harness_error"
+    ]
+  },
+  "limits": {
+    "maxTurns": 40,
+    "timeoutMinutes": 20,
+    "maxCostUsdPerAttempt": 2
+  },
+  "budget": {
+    "capUsd": 80,
+    "confirmed": false,
+    "experimentCapUsd": 5
+  },
+  "alpha": 0.05,
+  "invalidIfUnresolvedShareAbove": 0.1,
+  "checksSha256": "961892ed69fe7c3c52bccecb925c0e97076040489581a262efa332e3314ab21b",
+  "seed": 20261121,
+  "comparisons": [
+    {
+      "a": "E0",
+      "b": "E1",
+      "role": "primary",
+      "question": "Does an excuse comment on the existing float helper lower the pass rate of the new export path?"
+    },
+    {
+      "a": "E0",
+      "b": "E2",
+      "role": "exploratory",
+      "question": "Does an exact existing helper raise the pass rate?"
+    }
+  ],
+  "hypotheses": [
+    "H1 (primary): E1 passes less often than E0.",
+    "H2 (exploratory): E2 passes more often than E0."
+  ],
+  "pricing": {
+    "model": "claude-sonnet-5-5",
+    "input": 3,
+    "output": 15,
+    "cacheWrite5m": 3.75,
+    "cacheWrite1h": 6,
+    "cacheRead": 0.3,
+    "source": "Standard Sonnet list rates, per million tokens, copied from legacy-cents-v1. That experiment's smoke and pilot calibration ($0.82 reported, $1.30 in the console, $1.42 at these rates for 12 attempts) is the only measurement; this case has none."
+  }
+}

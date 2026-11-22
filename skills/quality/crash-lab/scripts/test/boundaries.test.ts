@@ -1,0 +1,39 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { transcriptProblems } from "../src/evidence-reporting/evidence.ts";
+import { parseReporterCounts } from "../src/artifact-verification/node-test-report.ts";
+import { expectedInFirstRequest } from "../src/session-execution/loading-probe.ts";
+import { DEMO_RULESET } from "../src/instruction-context/claude-code-rules.ts";
+import { runProcess } from "../src/util/proc.ts";
+import { makeTempDir } from "../src/util/fs.ts";
+
+const ROOT = join(import.meta.dirname, "..");
+
+test("a transcript with a line that is not JSON is reported, not silently skipped", () => {
+  const path = join(makeTempDir("transcript-"), "t.jsonl");
+  const init = JSON.stringify({ type: "system", subtype: "init", claude_code_version: "2.1.329" });
+  writeFileSync(path, `${init}\n{"type":"assistant"\n${JSON.stringify({ type: "result" })}\n`);
+  assert.deepEqual(transcriptProblems(path), [`transcript ${path} has 1 line(s) that are not JSON`]);
+});
+
+test("reporter output with non-numeric counts is an error, not a count", () => {
+  const counts = { tests: 1, pass: 1, fail: 0, cancelled: 0, skipped: 0, todo: 0 };
+  const summary = { tests: 1, passed: 1, failed: 0, cancelled: 0, skipped: 0, todo: 0 };
+  assert.deepEqual(parseReporterCounts(JSON.stringify({ leaf: counts, summary })), { counts });
+  assert.deepEqual(parseReporterCounts(JSON.stringify({ leaf: { ...counts, fail: "0" }, summary })), { error: "reporter output has counts that are not non-negative integers" });
+  assert.deepEqual(parseReporterCounts(JSON.stringify({ leaf: { ...counts, pass: counts.pass + 1, fail: -1 }, summary: { ...summary, passed: summary.passed + 1, failed: -1 } })), { error: "reporter output has counts that are not non-negative integers" });
+  assert.deepEqual(parseReporterCounts("null"), { error: "reporter output missing or corrupt" });
+});
+
+test("the loading probe expects exactly what the ruleset says loads, matching the committed receipt", () => {
+  const receipt = JSON.parse(readFileSync(join(ROOT, "docs", "sandbox-probe", "loading-receipt.json"), "utf8"));
+  assert.deepEqual(expectedInFirstRequest(DEMO_RULESET), receipt.loaded);
+});
+
+test("a command that cannot start says why in stderr", () => {
+  const r = runProcess("crashlab-no-such-binary", []);
+  assert.equal(r.code, null);
+  assert.match(r.stderr, /crashlab-no-such-binary could not run: .*ENOENT/);
+});

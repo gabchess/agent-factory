@@ -1,0 +1,1 @@
+{ "arm": "A3", "extends": ["_common"], "description": "Correct, on the renamed field of the code arm.", "expect": { "verdict": "pass", "reasonIncludes": [] } }

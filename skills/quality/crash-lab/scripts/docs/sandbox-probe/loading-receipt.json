@@ -1,0 +1,31 @@
+{
+  "cliVersion": "2.1.329",
+  "model": "claude-sonnet-5-5",
+  "loaded": {
+    "root CLAUDE.md": true,
+    "@import from root CLAUDE.md": true,
+    "CLAUDE.local.md": true,
+    "nested sub/CLAUDE.md": false,
+    "AGENTS.md": false,
+    "llms.txt": false,
+    "user ~/.claude/CLAUDE.md": true
+  },
+  "toolsSent": [
+    "Bash",
+    "DeferredToolPlaceholder",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Write"
+  ],
+  "initTools": [
+    "Bash",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Write"
+  ],
+  "requests": 6
+}

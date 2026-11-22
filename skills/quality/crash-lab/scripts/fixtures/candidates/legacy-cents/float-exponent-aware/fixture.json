@@ -1,0 +1,1 @@
+{ "arm": "A0", "extends": ["_common"], "description": "Almost right: currency-aware float division loses a cent near 2^53.", "expect": { "verdict": "fail", "reasonIncludes": ["H-08 (huge) expected USD,90071992547409.90, got USD,90071992547409.91", "H-09 (huge-refund) expected USD,-90071992547409.90, got USD,-90071992547409.91"] } }
