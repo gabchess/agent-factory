@@ -36,3 +36,7 @@ A [`code` label](docs/guide.md) resolves.
 An [escaped hash](docs/a%23b.md) resolves.
 
 Two backslashes \\\\`[x](nowhere.md)` keep the code.
+
+A [self link](<>) and a [self reference][self] resolve.
+
+[self]: <>

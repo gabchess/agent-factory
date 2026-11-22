@@ -2,7 +2,7 @@ import { posix } from "node:path";
 import { INLINE_LINK } from "./links.js";
 import { isMarkdown, proseLines } from "./markdown.js";
 
-const REFERENCE = /^ {0,3}\[(?!\^)[^\]]+\]:\s*(?:<(?<angle>[^>]+)>|(?<bare>\S+))/dg;
+const REFERENCE = /^ {0,3}\[(?!\^)[^\]]+\]:\s*(?:<(?<angle>[^>]*)>|(?<bare>\S+))/dg;
 const EXTERNAL = /^([a-z][a-z0-9+.-]*:|#|\/\/)/i;
 
 function decode(target) {

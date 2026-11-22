@@ -1,5 +1,5 @@
 const LABEL = String.raw`\[(?<label>(?:[^[\]]|\[[^\]]*\])*)\]`;
-const DESTINATION = String.raw`\(\s*(?:<(?<angle>[^>]+)>|(?<bare>(?:[^()\s]|\([^()\s]*\))+))(?:\s+[^)]*)?\)`;
+const DESTINATION = String.raw`\(\s*(?:<(?<angle>[^>]*)>|(?<bare>(?:[^()\s]|\([^()\s]*\))+))(?:\s+[^)]*)?\)`;
 
 export const INLINE_LINK = new RegExp(LABEL + DESTINATION, "dg");
 const REFERENCE_LINK = new RegExp(LABEL + String.raw`\[[^\]]*\]`, "g");
