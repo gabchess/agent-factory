@@ -61,12 +61,13 @@ export function inventoryClaudeCode(repoDir: string, opts: { home?: string; rule
   for (const src of sources) {
     if (["memory", "nested-memory", "local-memory", "user-memory"].includes(src.kind)) enqueue({ path: src.path, absolute: src.kind === "user-memory", applies: src.shouldApply, hops: 0 });
   }
-  const parsed = new Set<string>();
+  const parsedAtHops = new Map<string, number>();
   const recorded = new Set<string>();
   while (startup.length > 0 || later.length > 0) {
     const from = (startup.shift() ?? later.shift())!;
-    if (parsed.has(`${from.absolute}:${from.path}`)) continue;
-    parsed.add(`${from.absolute}:${from.path}`);
+    const seenAt = parsedAtHops.get(`${from.absolute}:${from.path}`);
+    if (seenAt !== undefined && seenAt <= from.hops) continue;
+    parsedAtHops.set(`${from.absolute}:${from.path}`, from.hops);
     const abs = from.absolute ? from.path : join(repoDir, from.path);
     for (const imp of parseImports(readFileSync(abs, "utf8"))) {
       const target = from.absolute ? join(dirname(abs), imp) : normalize(join(dirname(from.path), imp));

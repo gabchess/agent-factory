@@ -91,3 +91,16 @@ test("a nested CLAUDE.md imported by the root loads at startup, and a directory 
   const imports = inventoryClaudeCode(repo).sources.filter((s) => s.kind === "import");
   assert.deepEqual(imports.map((s) => [s.path, s.found, s.shouldApply]), [["nested/CLAUDE.md", true, "yes"], ["docs", false, "no"], ["nested/guide.md", true, "yes"]]);
 });
+
+test("a nested CLAUDE.md reached at the hop limit from the root still has its own imports listed", () => {
+  const repo = makeTempDir();
+  mkdirSync(join(repo, "nested"));
+  writeFileSync(join(repo, "CLAUDE.md"), "@a.md\n");
+  writeFileSync(join(repo, "a.md"), "@b.md\n");
+  writeFileSync(join(repo, "b.md"), "@c.md\n");
+  writeFileSync(join(repo, "c.md"), "@nested/CLAUDE.md\n");
+  writeFileSync(join(repo, "nested", "CLAUDE.md"), "@guide.md\n");
+  writeFileSync(join(repo, "nested", "guide.md"), "rules\n");
+  const imports = inventoryClaudeCode(repo).sources.filter((s) => s.kind === "import");
+  assert.deepEqual(imports.map((s) => [s.path, s.shouldApply]), [["a.md", "yes"], ["b.md", "yes"], ["c.md", "yes"], ["nested/CLAUDE.md", "yes"], ["nested/guide.md", "on-demand"]]);
+});
