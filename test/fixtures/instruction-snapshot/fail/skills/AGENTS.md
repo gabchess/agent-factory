@@ -1,0 +1,3 @@
+# skills
+
+- Names are unique.

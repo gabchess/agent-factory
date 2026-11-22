@@ -9,6 +9,15 @@
 - **Trigger.** What starts a run: a ticket state, a schedule, a webhook or a person.
 - **Run.** One attempt at one task, recorded in `data/`.
 - **Skill.** A folder with a `SKILL.md` that teaches an agent one workflow. Names are unique across the repo.
+- **Template.** The file in `templates/` that every new artifact of one kind starts from. CI fails when a skill, agent, ADR or MCP contract drifts from its template.
+- **Instruction snapshot.** `data/instructions.snapshot`: every `AGENTS.md` and `CLAUDE.md` in full, plus the name and description of each skill and MCP contract, which is what an agent reads before it opens any of them. CI fails when it is stale.
+- **MCP contract.** A `CONTRACT.md` under `tools/` that says what one MCP server is for, which of its tools an agent may call, and how to check it works.
+- **Lane brief.** The prompt that hands one task to a worker: goal, base, paths, skills and tools, done check and report. It lives with the task, not in the repo.
+- **Handover.** The note one agent leaves so a fresh one can resume a task: progress, decisions, next steps. It lives with the task, not in the repo.
+- **Listing.** The page that sells or shares one skill on a marketplace: card, description, demo, permissions and price.
+- **Marketplace.** A site that lists skills for others to install, such as Agensi. Its own fields and limits live in `data/marketplaces/`.
 - **Check.** A script CI runs that fails on a broken rule and says how to fix it.
+- **Pointer.** A line in an `AGENTS.md` that says when to read another file: "When you X, read Y". CI fails on a pointer to a missing file or one with no "When".
+- **Fixture.** A small sample repo under `test/fixtures/<check>/` that a check must pass (`pass/`) or fail (`fail/`).
 - **ADR.** A decision record in `decisions/`: the decision, why, and what result backs it.
 - **Verdict.** An independent reviewer's pass or fail on one exact commit.

@@ -1,0 +1,1 @@
+- When you write docs, read `GLOSSARY.md`.

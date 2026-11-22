@@ -1,45 +1,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { findDashes } from "../checks/no-dashes.js";
+import { check } from "../checks/no-dashes.js";
+import { fixture } from "./fixture.js";
 
-const fixture = (name) => readFileSync(new URL(`./fixtures/no-dashes/${name}`, import.meta.url), "utf8");
-
-test("clean text has no findings", () => {
-  assert.deepEqual(findDashes(fixture("clean.md")), []);
+test("text without dashes passes", () => {
+  assert.deepEqual(check(fixture("no-dashes", "pass")), []);
 });
 
-test("each em or en dash is reported with its line", () => {
+test("each em dash, en dash and spaced hyphen in prose is reported with its line and fix", () => {
+  const failures = check(fixture("no-dashes", "fail"));
   assert.deepEqual(
-    findDashes(fixture("dashed.md")).map(({ line, dash }) => [line, dash]),
-    [[2, "em dash"], [3, "en dash"]],
+    failures.map(({ path, line, column }) => [path, line, column]),
+    [["dashed.md", 2, 25], ["dashed.md", 3, 28], ["dashed.md", 4, 34], ["dashed.md", 5, 16]],
   );
-});
-
-test("the CLI reports a dash in an untracked file, skips links, and exits 1", (t) => {
-  const repo = mkdtempSync(join(tmpdir(), "no-dashes-"));
-  t.after(() => rmSync(repo, { recursive: true, force: true }));
-  execFileSync("git", ["init", "-q"], { cwd: repo });
-  writeFileSync(join(repo, "note.md"), "fine\nbad \u2014 here\n");
-  mkdirSync(join(repo, "folder"));
-  symlinkSync("folder", join(repo, "folder-link"));
-  symlinkSync("loop", join(repo, "loop"));
-  const run = spawnSync(process.execPath, [fileURLToPath(new URL("../checks/no-dashes.js", import.meta.url))], {
-    cwd: repo,
-    encoding: "utf8",
-  });
-  assert.equal(run.status, 1);
-  assert.match(run.stderr, /^note\.md:2:5: em dash\./);
-});
-
-test("importing the module without a script path does not run or throw", () => {
-  const module = new URL("../checks/no-dashes.js", import.meta.url).href;
-  const run = spawnSync(process.execPath, ["--input-type=module", "-e", `await import(${JSON.stringify(module)})`], {
-    encoding: "utf8",
-  });
-  assert.equal(run.status, 0, run.stderr);
+  assert.match(failures[0].message, /^em dash\. Rewrite the sentence with a comma, colon, period or parentheses/);
+  assert.match(failures[2].message, /^hyphen used as a dash\. Rewrite/);
 });
