@@ -16,6 +16,8 @@ test("two skills sharing a name or a folder name, in any case, quoted or with CR
     { path: "skills/d/design/SKILL.md", line: 1, message: fix("design", "skills/c/plan/SKILL.md") },
     { path: "skills/e/Ship/SKILL.md", line: 1, message: fix("Ship", "skills/f/ship/SKILL.md") },
     { path: "skills/f/ship/SKILL.md", line: 1, message: fix("ship", "skills/e/Ship/SKILL.md") },
+    { path: "skills/g/one/SKILL.md", line: 2, message: fix("twin", "skills/h/two/SKILL.md") },
+    { path: "skills/h/two/SKILL.md", line: 2, message: fix("twin", "skills/g/one/SKILL.md") },
     { path: "skills/reviews/code-review/SKILL.md", line: 2, message: fix("code-review", "skills/utilities/review/SKILL.md") },
     { path: "skills/utilities/review/SKILL.md", line: 2, message: fix("code-review", "skills/reviews/code-review/SKILL.md") },
     { path: "skills/x/lint/SKILL.md", line: 1, message: fix("lint", "skills/y/lint/SKILL.md") },
