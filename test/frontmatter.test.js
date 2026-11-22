@@ -25,13 +25,15 @@ test("joins wrapped plain values and commented block markers, but not nested key
 });
 
 test("reads a value on the next line and skips comment lines, but keeps # in block scalars", () => {
-  const text = ["---", "description:", "  Does one thing.", "  # a note", "name: twin", "  # explanation", "empty: # TODO", "  # fill later", "body: |", "  # kept", "list:", "  - item", "---"].join("\n");
+  const text = ["---", "description:", "  Does one thing.", "  # a note", "name: twin", "  # explanation", "empty: # TODO", "  # fill later", "body: |", "  # kept", "list:", "  - item", "quoted:", "  \"a # kept\"", "blank:", "  \"\"", "---"].join("\n");
   assert.deepEqual(fields(text), {
     description: ["Does one thing.", 2],
     name: ["twin", 5],
     empty: ["", 7],
     body: ["# kept", 9],
     list: ["", 11],
+    quoted: ["a # kept", 13],
+    blank: ["", 15],
   });
 });
 
