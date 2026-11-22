@@ -12,3 +12,5 @@ README.md explains the layout.
   read `checks/README.md`.
 - When you add a check, read `checks/README.md#adding`.
 - When you write C#, read `docs/C#.md`.
+
+Write each pointer like `read [guide][g]`, after its condition.

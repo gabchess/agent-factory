@@ -6,6 +6,7 @@ const WHEN = /^\s*(?:[-*+]\s+|\d+\.\s+)?when\b/i;
 const CONTINUATION = /^\s+(?![-*+]\s|\d+\.\s)\S/;
 const resolves = (folder, target, contains) =>
   [target, target.replace(/[?#].*$/, "")].some((path) => contains(posix.join(folder, path)));
+const inCode = (match, prose) => prose.slice(match.index, match.index + 4).toLowerCase() !== "read";
 const isAgentsFile = (path) => posix.basename(path) === "AGENTS.md";
 
 const deadPointer = (path) =>
@@ -22,8 +23,8 @@ function withItemStart(lines) {
 
 function pointerFailures({ path, text }, contains) {
   const folder = posix.dirname(path);
-  return withItemStart(proseLines(text)).flatMap(({ line, raw, start }) =>
-    [...raw.matchAll(POINTER)].flatMap((match) => {
+  return withItemStart(proseLines(text)).flatMap(({ line, raw, prose, start }) =>
+    [...raw.matchAll(POINTER)].filter((match) => !inCode(match, prose)).flatMap((match) => {
       const column = match.index + 1;
       const target = match[1] ?? match[2];
       return [
