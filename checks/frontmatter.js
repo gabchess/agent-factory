@@ -5,9 +5,10 @@ const QUOTED = /^(["'])(.*?)\1(?:\s+#.*)?$/;
 const unquote = (value) => (QUOTED.test(value) ? value.replace(QUOTED, "$2") : value.replace(/(^|\s+)#.*$/, ""));
 
 export function frontmatter(text) {
-  const lines = text.split(/\r?\n/);
-  if (lines[0] !== "---") return null;
-  const end = lines.indexOf("---", 1);
+  const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/);
+  const isFence = (line) => line.trimEnd() === "---";
+  if (!isFence(lines[0])) return null;
+  const end = lines.findIndex((line, index) => index > 0 && isFence(line));
   if (end === -1) return null;
   const fields = new Map();
   let current = null;

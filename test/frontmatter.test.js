@@ -24,6 +24,10 @@ test("joins wrapped plain values and commented block markers, but not nested key
   });
 });
 
+test("a byte order mark and trailing spaces on the fences are ignored", () => {
+  assert.deepEqual(fields("\uFEFF--- \nname: marked\n---  \n"), { name: ["marked", 2] });
+});
+
 test("a file without a closed frontmatter block has none", () => {
   assert.equal(frontmatter("# Title\n"), null);
   assert.equal(frontmatter("---\nname: open\n"), null);
