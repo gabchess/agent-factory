@@ -58,7 +58,7 @@ One JSON object per line, one line per run, appended after the verifier finishes
 ```
 
 - `arm` and `run`: the arm id and the run's index, from 0 to `runsPerArm - 1`.
-- `verdict`: `pass` or `fail` from the verifier; `fail` also when the session crashed, timed out or hit a limit; `unknown` when the harness could not start or finish the session or the verifier itself broke; `not_run` when `budget` stopped the run before it started.
-- `costUsd`: what the session cost, from the harness's usage output. Required on every line but `not_run`; a line without it is refused. Use the per-run limit when the harness gives no figure, and say so in the summary.
+- `verdict`: `pass` or `fail` from the verifier, run on the folder however the session ended; `unknown` when the harness could not start the session or the verifier itself broke; `not_run` when `budget` stopped the run before it started.
+- `costUsd`: what the session cost, from the harness's usage output. Required on every line but `not_run`; a line without it is refused. When the harness gives no figure, use the per-run cost from step 6 (the limit, or the estimate) and say so in the summary.
 - `endedNormally`: true when the session finished without an error, a timeout or a limit.
 - `reason`: the verifier's failure message, or what went wrong.

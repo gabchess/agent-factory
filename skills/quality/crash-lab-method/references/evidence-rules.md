@@ -7,11 +7,11 @@ What a report counts as a result, and what it refuses to claim.
 | Verdict | When |
 | --- | --- |
 | `pass` | The session ended and the verifier passed the run's folder |
-| `fail` | The verifier failed the folder, or the session crashed, timed out or hit a limit |
-| `unknown` | The harness could not start or finish the session, or the verifier itself broke |
+| `fail` | The verifier failed the folder |
+| `unknown` | The harness could not start the session, or the verifier itself broke |
 | `not_run` | The next run could have crossed the spend cap |
 
-Pass rates count only `pass` and `fail`. A session that ended normally is recorded but never passes a run: only the verifier can. A report is invalid when more than `invalidIfUnresolvedShareAbove` of its runs are `unknown` or `not_run`, or when its lines do not match the plan exactly (a missing, repeated or unplanned run).
+Pass rates count only `pass` and `fail`. The verifier runs on the folder however the session ended: a crash, a timeout or a limit is recorded in `endedNormally`, and a session that ended normally never passes a run on its own. Only the verifier decides. A report is invalid when more than `invalidIfUnresolvedShareAbove` of its runs are `unknown` or `not_run`, or when its lines do not match the plan exactly (a missing, repeated or unplanned run).
 
 ## Phases
 
