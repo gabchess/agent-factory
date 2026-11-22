@@ -363,8 +363,8 @@ test("a truncated attempts log line is reported, not thrown", () => {
 
 test("attempts log lines that are not attempt records are reported, not trusted", () => {
   const log = join(makeTempDir(), "attempts.jsonl");
-  writeFileSync(log, "{}\nnull\n");
+  writeFileSync(log, `{}\nnull\n${JSON.stringify({ slot: "main:A0:0", attempt: 1, status: "mystery", stage: "terminal" })}\n`);
   const entries = reverifyAttempts({ attemptsLog: log, caseSpec, checksSha256: base.checksSha256, runner: hostRunner });
-  assert.equal(entries.length, 2);
+  assert.equal(entries.length, 3);
   assert.ok(entries.every((e) => !e.artifactOk && /is not an attempt record/.test(e.problems[0])));
 });

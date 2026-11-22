@@ -4,6 +4,7 @@ import { buildArm } from "../experiment-design/arms.ts";
 import type { CaseSpec } from "../experiment-design/case.ts";
 import type { AttemptRecord, AttemptStage } from "../session-execution/runner.ts";
 import type { CandidateRunner } from "../util/proc.ts";
+import type { SessionStatus } from "../adapters/types.ts";
 import { extractSnapshot, locateSnapshot, snapshotProblems } from "./artifacts.ts";
 import { verifyCandidate } from "./verify.ts";
 
@@ -37,7 +38,7 @@ export function reverifyAttempts(opts: { attemptsLog: string; caseSpec: CaseSpec
       continue;
     }
     if (!isLoggedAttempt(parsed)) {
-      bad("is not an attempt record (needs slot, attempt, status and stage)");
+      bad("is not an attempt record (needs slot, attempt, a known status and stage)");
       continue;
     }
     const rec = parsed;
@@ -76,8 +77,10 @@ export function reverifyAttempts(opts: { attemptsLog: string; caseSpec: CaseSpec
   return out.sort((a, b) => a.slot.localeCompare(b.slot) || a.attempt - b.attempt);
 }
 
+const SESSION_STATUSES = new Set<string>(["completed", "timeout", "budget_exceeded", "harness_error", "credit_exhausted"] satisfies SessionStatus[]);
+
 function isLoggedAttempt(v: unknown): v is LoggedAttempt {
   if (v === null || typeof v !== "object" || Array.isArray(v)) return false;
   const r = v as Record<string, unknown>;
-  return typeof r.slot === "string" && Number.isInteger(r.attempt) && typeof r.status === "string" && (r.stage === "session" || r.stage === "terminal");
+  return typeof r.slot === "string" && Number.isInteger(r.attempt) && typeof r.status === "string" && SESSION_STATUSES.has(r.status) && (r.stage === "session" || r.stage === "terminal");
 }
