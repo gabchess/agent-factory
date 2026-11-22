@@ -1,6 +1,6 @@
 # Experiment format
 
-The lab folder, the experiment file and the results lines that `crashlab.mjs` reads.
+The lab folder, the experiment file and the results lines that `dead-rules.mjs` reads.
 
 ## Lab folder
 
@@ -20,7 +20,7 @@ lab/
   results.jsonl
 ```
 
-Run every `crashlab.mjs` command from the lab folder. Keep the lab folder outside the target repository and outside every run folder. A run that can read `verify/` or `fixtures/` has seen the answer, and its result counts for nothing.
+Run every `dead-rules.mjs` command from the lab folder. Keep the lab folder outside the target repository and outside every run folder. A run that can read `verify/` or `fixtures/` has seen the answer, and its result counts for nothing.
 
 ## Verifier
 

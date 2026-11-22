@@ -1,27 +1,29 @@
-# Listing: crash-lab-method
+# Listing: agentic-dead-rules-detector
 
 ## Package
 
-- Status: the Agensi edition of Crash Lab. Its one script, `scripts/crashlab.mjs`, uses only the Node.js standard library, reads no other package file and stays under 20 KB, so it runs alone from a temporary file as Agensi requires (see `data/marketplaces/agensi.md`). The full lab in `skills/quality/crash-lab` stays a local install.
-- Build the archive from a commit: `git archive --format=zip -o crash-lab.zip HEAD:skills/quality/crash-lab-method SKILL.md references scripts`. It holds `SKILL.md` at its root, plus `references/` and `scripts/`. This file, `media/` and `test/` stay out.
+- Status: the Agensi edition of Crash Lab, sold as Agentic Dead Rules Detector. Its one script, `scripts/dead-rules.mjs`, uses only the Node.js standard library, reads no other package file and stays under 20 KB, so it runs alone from a temporary file as Agensi requires (see `data/marketplaces/agensi.md`). The full lab in `skills/quality/crash-lab` stays a local install.
+- Build the archive from a commit: `git archive --format=zip -o agentic-dead-rules-detector.zip HEAD:skills/quality/agentic-dead-rules-detector SKILL.md references scripts`. It holds `SKILL.md` at its root, plus `references/` and `scripts/`. This file, `media/` and `test/` stay out.
 - The marketplace reads the name and description from the frontmatter, so those come from the skill unchanged.
 - Agensi hosted tools: none. The agent sessions it starts run on the buyer's own agent and model account.
 
 ## Card
 
-- Name: Crash Lab: test agent instructions before you ship them
-- Summary: Runs your coding agent on the same task with and without an instruction change, each in a fresh session, and lets a check the agent never saw decide which version did the work right. Reports pass rates with intervals, cost and every failure.
+- Name: Agentic Dead Rules Detector: see which agent rules work
+- Summary: Is that AGENTS.md rule doing its job, doing nothing, or making your agent worse? Runs your coding agent on the same task with and without it, each in a fresh session, and a check the agent never saw decides which version did the work right. Pass rates, intervals, cost and every failure.
 - Logo: `media/logo.png`, 512 by 512
 
 ## Description
 
-Most changes to `AGENTS.md`, `CLAUDE.md` or a skill are reviewed by reading the diff, which cannot show which lines change what the agent does. A rewrite that reads better can drop the one rule that kept the agent from a bug, and the session will still end as if it worked.
+Your agent reads every rule in `AGENTS.md`, `CLAUDE.md` or a skill on every run. A rule can steer the work, do nothing, or quietly make it worse, and reading the file cannot tell you which. A rewrite that reads better can drop the one line that kept the agent away from a bug, and the session still ends as if it worked.
 
-Crash Lab runs the agent instead. Your agent builds controlled variants ("arms") of one coding task that differ by a single change, such as a deleted instruction line, a rewrite or a renamed field. Each run is a fresh session of the agent you already use, started in its own copy of the repository with no memory of the others. When a session ends, a verifier the agent never saw checks the work: exact outputs on held-out inputs, the repository's tests with skipped tests counted as failures, and no change to protected files. How the session ended is logged beside the verdict and never counts toward it.
+Agentic Dead Rules Detector runs the agent instead. Your agent builds controlled variants ("arms") of one coding task that differ by a single change, such as a deleted instruction line, a rewrite or a renamed field. Each run is a fresh session of the agent you already use, started in its own copy of the repository with no memory of the others. When a session ends, a verifier the agent never saw checks the work: exact outputs on held-out inputs, the repository's tests with skipped tests counted as failures, and no change to protected files. How the session ended is logged beside the verdict and never counts toward it.
 
 Before any money is spent, the skill makes your agent prove the verifier: every known-bad fixture, built from a real past mistake or a tampering trick, has to fail. The runs start only after you name a spend cap, and a budget check before each run stops the experiment before it can cross it.
 
 You get a Markdown report with pass rates and 95% Wilson intervals, a Fisher exact test on one comparison chosen before the runs, the total cost against your cap, every failure grouped by reason, and a proposed decision for the instruction (keep, shorten, move into code, repair or remove). It says "inconclusive" when the data cannot tell, and never calls that equivalence.
+
+"Dead" means what the numbers allow: no measurable effect at the number of runs you paid for. The report calls that inconclusive, and `plan` shows before you spend anything how large a difference your run count can catch. When a rule lowers the pass rate by more than that, the report shows it as a measured difference, and the same holds for a rename or a check that does the rule's job better.
 
 The numbers come from one dependency-free Node.js script. It works with any agent that can start a fresh session of itself, such as a headless CLI or a subagent with a fresh context. It does not sandbox those sessions: they run with your agent's usual permissions, so use a container or a throwaway VM if you have one.
 
@@ -33,7 +35,7 @@ Our money code has a float helper with a comment saying "Floating-point division
 
 ### Result
 
-The sessions below came from the full Crash Lab's excuse-contagion experiment on 2026-11-21: Claude Code 2.1.329 with `claude-sonnet-5-5`, 10 runs per arm. The report is this skill's `crashlab.mjs report`, run on those 30 recorded results.
+The sessions below came from the full Crash Lab's excuse-contagion experiment on 2026-11-21: Claude Code 2.1.329 with `claude-sonnet-5-5`, 10 runs per arm. The report is this skill's `dead-rules.mjs report`, run on those 30 recorded results.
 
 ## Summary
 
@@ -103,15 +105,16 @@ One-time, $9.
 
 ## Tags
 
-- Tags: agent evaluation, AGENTS.md, CLAUDE.md, prompt testing, coding agents, A/B testing, regression testing
+- Tags: dead rules, agent evaluation, AGENTS.md, CLAUDE.md, prompt testing, coding agents, A/B testing, regression testing
 - Categories: Developer tools, Testing and QA
-- Use cases: test an instruction change before merging it; find out whether an AGENTS.md line is load-bearing; check whether a code rename can replace an instruction; catch an agent that finishes cleanly on broken code
+- Use cases: find the AGENTS.md rules that change nothing; test an instruction change before merging it; find out whether an AGENTS.md line is load-bearing; check whether a code rename can replace an instruction; catch an agent that finishes cleanly on broken code
 
 ## FAQ
 
 - Does it spend money? Only the runs do, on your own agent or model account, and only after you name a dollar cap. Planning, verifier rehearsal and the report are free.
 - Which agents can it measure? The one you run it in, or any agent you can start headless from the terminal. Each run must be a fresh session with no memory of this conversation.
 - Is each run sandboxed? Not by the skill. Runs use your agent's normal permissions in a temporary copy of your repository. Use a container or a throwaway VM for stronger isolation, and turn off user-level instructions, memory and skills for the runs, since they reach every arm.
+- What counts as a dead rule? One whose arm shows no measurable difference from the arm without it, at the runs you paid for. That result is inconclusive, not proof that the rule does nothing: more runs can still find an effect.
 - Why did my comparison come back inconclusive? At 10 runs per arm, only large differences reach significance. Inconclusive means no difference was detected, never that the arms are the same. `plan` shows what your run count can detect before you spend anything.
 - Does it work on macOS or Windows? Yes, wherever Node.js 18 or later, git and your agent run.
 

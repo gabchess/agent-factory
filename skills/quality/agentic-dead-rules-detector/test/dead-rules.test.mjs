@@ -4,13 +4,13 @@ import { copyFileSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { fisherTwoSided, wilson } from "../scripts/crashlab.mjs";
+import { fisherTwoSided, wilson } from "../scripts/dead-rules.mjs";
 
-const SCRIPT = new URL("../scripts/crashlab.mjs", import.meta.url);
+const SCRIPT = new URL("../scripts/dead-rules.mjs", import.meta.url);
 
 function isolatedScript() {
-  const dir = mkdtempSync(join(tmpdir(), "crashlab-alone-"));
-  const path = join(dir, "crashlab.mjs");
+  const dir = mkdtempSync(join(tmpdir(), "dead-rules-alone-"));
+  const path = join(dir, "dead-rules.mjs");
   copyFileSync(SCRIPT, path);
   return path;
 }
@@ -21,7 +21,7 @@ function run(script, args, cwd) {
 }
 
 function lab(arms) {
-  const dir = mkdtempSync(join(tmpdir(), "crashlab-lab-"));
+  const dir = mkdtempSync(join(tmpdir(), "dead-rules-lab-"));
   writeFileSync(join(dir, "experiment.json"), JSON.stringify({
     id: "replay",
     arms: Object.keys(arms),
@@ -97,7 +97,7 @@ test("plan flags a cost over the cap", () => {
 });
 
 test("rehearse fails when a bad fixture passes the verifier", () => {
-  const dir = mkdtempSync(join(tmpdir(), "crashlab-fixtures-"));
+  const dir = mkdtempSync(join(tmpdir(), "dead-rules-fixtures-"));
   for (const name of ["good", "bad", "sneaky"]) mkdirSync(join(dir, name));
   writeFileSync(join(dir, "good", "ok"), "");
   writeFileSync(join(dir, "sneaky", "ok"), "");
@@ -112,7 +112,7 @@ test("rehearse fails when a bad fixture passes the verifier", () => {
 });
 
 test("rehearse counts a missing verifier as broken, not as a caught mistake", () => {
-  const dir = mkdtempSync(join(tmpdir(), "crashlab-missing-"));
+  const dir = mkdtempSync(join(tmpdir(), "dead-rules-missing-"));
   for (const name of ["good", "bad"]) mkdirSync(join(dir, name));
   const r = run(isolatedScript(), ["rehearse", "--good", "good", "--bad", "bad", "--", process.execPath, "verify/missing.mjs", "{dir}"], dir);
   assert.equal(r.code, 1);
@@ -147,7 +147,7 @@ test("budget and plan accept a run that exactly fills the cap", () => {
 });
 
 test("rehearse counts a crashing verifier as broken, not as a caught mistake", () => {
-  const dir = mkdtempSync(join(tmpdir(), "crashlab-crash-"));
+  const dir = mkdtempSync(join(tmpdir(), "dead-rules-crash-"));
   for (const name of ["good", "bad"]) mkdirSync(join(dir, name));
   writeFileSync(join(dir, "good", "ok"), "");
   const verifier = ["--", process.execPath, "-e", "const fs = require('fs'); if (fs.existsSync(process.argv[1] + '/ok')) process.exit(0); process.exit(3)", "{dir}"];

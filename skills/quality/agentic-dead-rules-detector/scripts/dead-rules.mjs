@@ -3,12 +3,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
-const USAGE = `crashlab.mjs: plan, rehearse, budget and report for an instruction experiment.
+const USAGE = `dead-rules.mjs: plan, rehearse, budget and report for an instruction experiment.
 
-  node crashlab.mjs plan --runs 10 [--arms 3] [--cost-per-run 0.08] [--cap 5]
-  node crashlab.mjs rehearse --good <dir>[,<dir>] --bad <dir>[,<dir>] -- <verifier command with {dir}>
-  node crashlab.mjs budget --experiment experiment.json --results results-smoke.jsonl,results-pilot.jsonl,results.jsonl --next-cost 0.10
-  node crashlab.mjs report --experiment experiment.json --results results.jsonl
+  node dead-rules.mjs plan --runs 10 [--arms 3] [--cost-per-run 0.08] [--cap 5]
+  node dead-rules.mjs rehearse --good <dir>[,<dir>] --bad <dir>[,<dir>] -- <verifier command with {dir}>
+  node dead-rules.mjs budget --experiment experiment.json --results results-smoke.jsonl,results-pilot.jsonl,results.jsonl --next-cost 0.10
+  node dead-rules.mjs report --experiment experiment.json --results results.jsonl
 
 Node.js 18 or later, standard library only. Exit code 1 means the check failed.
 A verifier exits 0 for correct work, 1 for wrong work, and anything else when it broke.`;
