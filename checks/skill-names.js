@@ -2,7 +2,7 @@ import { posix } from "node:path";
 
 const isSkill = (path) => path.startsWith("skills/") && posix.basename(path) === "SKILL.md";
 
-const QUOTED = /^(["'])(.*)\1$/;
+const QUOTED = /^(["'])(.*?)\1(?:\s+#.*)?$/;
 const unquote = (name) => (QUOTED.test(name) ? name.replace(QUOTED, "$2") : name.replace(/\s+#.*$/, ""));
 const key = (name) => name.toLowerCase();
 
