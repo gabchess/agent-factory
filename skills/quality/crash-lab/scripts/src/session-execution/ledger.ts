@@ -43,7 +43,7 @@ export class BudgetLedger {
       fd = openSync(lockPath, "wx");
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "EEXIST") throw new Error(`ledger lock ${lockPath} could not be created: ${(err as Error).message}`, { cause: err });
-      fd = recoverAbandonedLock(path, lockPath);
+      throw new Error(lockedMessage(path, lockPath));
     }
     try {
       writeFileSync(fd, String(process.pid));
@@ -141,43 +141,21 @@ function parseStoredLedger(path: string, text: string): { capUsd: number; entrie
   return { capUsd: shape.capUsd, entries: shape.entries as LedgerEntry[] };
 }
 
-function lockOwnerAlive(lockPath: string): boolean {
-  const pid = Number(readFileSync(lockPath, "utf8").trim());
-  if (!Number.isInteger(pid) || pid <= 0) return true;
+function lockedMessage(path: string, lockPath: string): string {
+  let pid = 0;
+  try {
+    pid = Number(readFileSync(lockPath, "utf8").trim());
+  } catch {
+    pid = 0;
+  }
+  if (!Number.isInteger(pid) || pid <= 0) return `ledger ${path} is locked by another runner`;
+  let alive = true;
   try {
     process.kill(pid, 0);
-    return true;
   } catch (err) {
-    return (err as NodeJS.ErrnoException).code === "EPERM";
+    alive = (err as NodeJS.ErrnoException).code === "EPERM";
   }
-}
-
-function recoverAbandonedLock(path: string, lockPath: string): number {
-  const locked = new Error(`ledger ${path} is locked by another runner`);
-  const recoveryPath = `${lockPath}.recovery`;
-  let recovery: number;
-  try {
-    recovery = openSync(recoveryPath, "wx");
-  } catch {
-    if (!existsSync(recoveryPath) || lockOwnerAlive(recoveryPath)) throw locked;
-    unlinkSync(recoveryPath);
-    try {
-      recovery = openSync(recoveryPath, "wx");
-    } catch {
-      throw locked;
-    }
-  }
-  try {
-    writeFileSync(recovery, String(process.pid));
-    if (existsSync(lockPath) && lockOwnerAlive(lockPath)) throw locked;
-    if (existsSync(lockPath)) unlinkSync(lockPath);
-    try {
-      return openSync(lockPath, "wx");
-    } catch {
-      throw locked;
-    }
-  } finally {
-    closeSync(recovery);
-    unlinkSync(recoveryPath);
-  }
+  return alive
+    ? `ledger ${path} is locked by another runner (PID ${pid})`
+    : `ledger ${path} is locked by another runner (PID ${pid}, no longer running): if no other runner is active, delete ${lockPath} and retry`;
 }
