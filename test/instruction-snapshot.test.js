@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { check } from "../checks/instruction-snapshot.js";
+import { check, render } from "../checks/instruction-snapshot.js";
 import { createRepo } from "../checks/repo.js";
 import { fixture } from "./fixture.js";
 
@@ -26,6 +26,11 @@ test("a snapshot checked out with CRLF line endings still matches", () => {
   const repo = fixture("instruction-snapshot", "pass");
   const crlf = repo.files.map((file) => (file.path === SNAPSHOT ? { ...file, text: file.text.replace(/\n/g, "\r\n") } : file));
   assert.deepEqual(check({ ...repo, files: crlf }), []);
+});
+
+test("a nested CLAUDE.md is part of what an agent loads", () => {
+  const text = render(repoOf({ "AGENTS.md": "# root\n", "skills/CLAUDE.md": "Skill folder rule.\n" }));
+  assert.match(text, /## skills\/CLAUDE\.md\n\nSkill folder rule\./);
 });
 
 test("a missing snapshot fails, and a repo with nothing an agent loads needs none", () => {

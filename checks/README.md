@@ -20,7 +20,7 @@ The checks:
 - `adr-names.js`: fails on a Markdown file in `decisions/` that is not a numbered ADR or the folder's `README.md`, `AGENTS.md` or `CLAUDE.md`.
 - `agents-pointers.js`: fails on an `AGENTS.md` pointer to a path that does not exist, and on a pointer whose line does not start with when to read it.
 - `dead-links.js`: fails on a Markdown link to a path in the repo that does not exist.
-- `instruction-snapshot.js`: fails when `data/instructions.snapshot` no longer matches what an agent loads here: every `AGENTS.md`, the skill index and the tool contracts.
+- `instruction-snapshot.js`: fails when `data/instructions.snapshot` no longer matches what an agent loads here: every `AGENTS.md` and `CLAUDE.md`, the skill index and the tool contracts.
 - `no-dashes.js`: fails on em and en dashes in any text file, and on a hyphen used as a dash in Markdown prose.
 - `no-linear-links.js`: fails on a link to Linear in any file. Linear links here, never the reverse.
 - `skill-names.js`: fails when two skills share a name or a folder name, since harnesses link skills flat by name.
@@ -28,4 +28,4 @@ The checks:
 
 The generator, which CI never runs:
 
-- `write-snapshot.js`: writes `data/instructions.snapshot` from the repo as it is now. Run it with `npm run snapshot` after changing an `AGENTS.md`, a skill or an MCP contract.
+- `write-snapshot.js`: writes `data/instructions.snapshot` from the repo as it is now. Run it with `npm run snapshot` after changing an `AGENTS.md`, a `CLAUDE.md`, a skill or an MCP contract.

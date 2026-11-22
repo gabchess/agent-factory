@@ -11,3 +11,4 @@ export const TEMPLATED = [SKILL, AGENT, ADR, MCP_CONTRACT, LISTING];
 
 export const isA = (kind) => ({ path }) => kind.pattern.test(path);
 export const isAgentsFile = ({ path }) => posix.basename(path) === "AGENTS.md";
+export const isInstructionFile = ({ path }) => ["AGENTS.md", "CLAUDE.md"].includes(posix.basename(path));
