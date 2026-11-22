@@ -1,7 +1,7 @@
 import { ADR, isA } from "./artifacts.js";
 
-const isDecisionsFile = ({ path }) => /^decisions\/[^/]+\.md$/.test(path);
-const isFolderDoc = ({ path }) => /^decisions\/(README|AGENTS|CLAUDE)\.md$/.test(path);
+const isDecisionsFile = ({ path }) => /^decisions\/.+\.md$/.test(path);
+const isFolderDoc = ({ path }) => /^decisions\/(.+\/)?(README|AGENTS|CLAUDE)\.md$/.test(path);
 
 export const check = ({ files }) =>
   files
