@@ -1,7 +1,6 @@
 import { posix } from "node:path";
+import { SKILL, isA } from "./artifacts.js";
 import { frontmatter } from "./frontmatter.js";
-
-const isSkill = (path) => path.startsWith("skills/") && posix.basename(path) === "SKILL.md";
 
 const key = (name) => name.toLowerCase();
 
@@ -20,7 +19,7 @@ function linkNames({ path, text }) {
 const fix = (name, other) => `skill name "${name}" is also used by ${other}. Harnesses link skills flat by name, so rename one.`;
 
 export function check({ files }) {
-  const byName = Map.groupBy(files.filter(({ path }) => isSkill(path)).flatMap(linkNames), ({ name }) => key(name));
+  const byName = Map.groupBy(files.filter(isA(SKILL)).flatMap(linkNames), ({ name }) => key(name));
   return [...byName.values()]
     .flatMap((skills) =>
       skills.flatMap(({ path, name, line }) =>

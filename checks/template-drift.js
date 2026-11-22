@@ -1,15 +1,6 @@
 import { frontmatter } from "./frontmatter.js";
 import { proseLines } from "./markdown.js";
-
-const KINDS = [
-  { name: "skill", template: "templates/skill/SKILL.md", artifact: /^skills\/.+\/SKILL\.md$/ },
-  { name: "agent", template: "templates/agent/AGENT.md", artifact: /^agents\/.+\/AGENT\.md$/ },
-  { name: "ADR", template: "templates/adr/0000-title.md", artifact: /^decisions\/\d{4}-[^/]+\.md$/ },
-  { name: "MCP contract", template: "templates/mcp-contract/CONTRACT.md", artifact: /^tools\/.+\/CONTRACT\.md$/ },
-];
-const ADR = KINDS.find(({ name }) => name === "ADR");
-const DECISIONS_DOCS = /^decisions\/(README|AGENTS|CLAUDE)\.md$/;
-const isMisnamedAdr = (path) => /^decisions\/[^/]+\.md$/.test(path) && !DECISIONS_DOCS.test(path) && !ADR.artifact.test(path);
+import { TEMPLATED, isA } from "./artifacts.js";
 
 const headings = (text) =>
   proseLines(text)
@@ -37,8 +28,9 @@ function drift({ path, text }, template, expected) {
   return [...missingKeys, ...missingSections, ...outOfOrder];
 }
 
-function checkKind({ name, template, artifact }, files) {
-  const artifacts = files.filter(({ path }) => artifact.test(path));
+function checkKind(kind, files) {
+  const { name, template } = kind;
+  const artifacts = files.filter(isA(kind));
   const source = files.find(({ path }) => path === template);
   if (!source) {
     return artifacts.map(({ path }) => ({
@@ -51,9 +43,5 @@ function checkKind({ name, template, artifact }, files) {
   return artifacts.flatMap((file) => drift(file, template, expected));
 }
 
-export function check({ files }) {
-  const misnamed = files
-    .filter(({ path }) => isMisnamedAdr(path))
-    .map(({ path }) => ({ path, line: 1, message: `not a numbered ADR. Rename it decisions/NNNN-title.md, starting from ${ADR.template}.` }));
-  return [...KINDS.flatMap((kind) => checkKind(kind, files)), ...misnamed].sort((a, b) => a.path.localeCompare(b.path));
-}
+export const check = ({ files }) =>
+  TEMPLATED.flatMap((kind) => checkKind(kind, files)).sort((a, b) => a.path.localeCompare(b.path));
