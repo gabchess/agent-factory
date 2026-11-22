@@ -10,9 +10,13 @@ function headingText(raw) {
   return heading.replace(/^(#+)\s+/, "$1 ").replace(/\s+#+$/, "");
 }
 
+function body(text) {
+  const end = frontmatterEnd(text);
+  return text.split("\n").map((line, index) => (index < end ? "" : line)).join("\n");
+}
+
 const headings = (text) =>
-  proseLines(text)
-    .filter(({ line }) => line > frontmatterEnd(text))
+  proseLines(body(text))
     .map(({ line, raw }) => ({ line, raw, heading: headingText(raw) }))
     .filter(({ raw, heading }) => /^ {0,3}## /.test(raw) && /^## \S/.test(heading));
 
