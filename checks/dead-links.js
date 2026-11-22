@@ -5,14 +5,23 @@ const INLINE = /\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+[^)]*)?\)/g;
 const REFERENCE = /^ {0,3}\[[^\]]+\]:\s*<?([^\s>]+)>?/g;
 const EXTERNAL = /^([a-z][a-z0-9+.-]*:|#)/i;
 
+function decode(target) {
+  try {
+    return decodeURI(target);
+  } catch {
+    return null;
+  }
+}
+
 function resolve(from, target) {
-  const path = decodeURI(target.replace(/[?#].*$/, ""));
+  const path = decode(target.replace(/[?#].*$/, ""));
+  if (path === null) return null;
   const joined = path.startsWith("/") ? path.slice(1) : posix.join(posix.dirname(from), path);
   return posix.normalize(joined).replace(/\/$/, "");
 }
 
 const outsideRepo = (path) => path === ".." || path.startsWith("../");
-const exists = (path, contains) => path === "." || (!outsideRepo(path) && contains(path));
+const exists = (path, contains) => path !== null && (path === "." || (!outsideRepo(path) && contains(path)));
 
 const links = (prose) =>
   [INLINE, REFERENCE].flatMap((pattern) =>
