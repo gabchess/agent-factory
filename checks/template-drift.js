@@ -2,23 +2,26 @@ import { frontmatter } from "./frontmatter.js";
 import { proseLines } from "./markdown.js";
 import { TEMPLATED, isA } from "./artifacts.js";
 
-const headingText = (raw) => raw.trimEnd().replace(/\s*<!--.*?-->$/, "").replace(/\s+#+$/, "");
+const headingText = (raw) => raw.trim().replace(/\s*<!--.*?-->$/, "").replace(/\s+#+$/, "");
 
 const headings = (text) =>
   proseLines(text)
-    .map(({ line, raw }) => ({ line, heading: headingText(raw) }))
-    .filter(({ heading }) => /^## \S/.test(heading));
+    .map(({ line, raw }) => ({ line, raw, heading: headingText(raw) }))
+    .filter(({ raw, heading }) => /^ {0,3}## /.test(raw) && /^## \S/.test(heading));
 
 function shape(text) {
-  return { keys: [...(frontmatter(text) ?? new Map()).keys()], headings: headings(text) };
+  return { fields: frontmatter(text) ?? new Map(), headings: headings(text) };
 }
 
 function drift({ path, text }, template, expected) {
   const actual = shape(text);
   const order = expected.headings.map(({ heading }) => heading).join(", ");
-  const missingKeys = expected.keys
-    .filter((key) => !actual.keys.includes(key))
+  const missingKeys = [...expected.fields.keys()]
+    .filter((key) => !actual.fields.has(key))
     .map((key) => ({ path, line: 1, message: `missing frontmatter key "${key}" that ${template} has. Add it.` }));
+  const emptyKeys = [...expected.fields]
+    .filter(([key, { value }]) => value && actual.fields.get(key)?.value === "")
+    .map(([key]) => ({ path, line: actual.fields.get(key).line, message: `frontmatter key "${key}" is empty. Fill it in the way ${template} shows.` }));
   const found = expected.headings.map(({ heading }) => ({ heading, at: actual.headings.find((h) => h.heading === heading) }));
   const missingSections = found
     .filter(({ at }) => !at)
@@ -27,7 +30,7 @@ function drift({ path, text }, template, expected) {
   const outOfOrder = present
     .filter(({ at }, index) => present.slice(0, index).some((earlier) => earlier.at.line > at.line))
     .map(({ heading, at }) => ({ path, line: at.line, message: `section "${heading}" is out of order. ${template} runs: ${order}.` }));
-  return [...missingKeys, ...missingSections, ...outOfOrder];
+  return [...missingKeys, ...emptyKeys, ...missingSections, ...outOfOrder];
 }
 
 function checkKind(kind, files) {
