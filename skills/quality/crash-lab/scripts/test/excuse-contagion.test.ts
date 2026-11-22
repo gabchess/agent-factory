@@ -8,6 +8,7 @@ import { auditArm } from "../src/experiment-design/contamination.ts";
 import { loadExperiment, schedule } from "../src/experiment-design/experiment.ts";
 import { applyFixture, fakeAdapter, loadFixture, type ScriptedAttempt } from "../src/adapters/fake.ts";
 import { verifyCandidate } from "../src/artifact-verification/verify.ts";
+import { hostRunner } from "../src/util/proc.ts";
 import { buildReport } from "../src/evidence-reporting/report.ts";
 import { newLedger, runPhase } from "../src/session-execution/runner.ts";
 import { listFiles, sha256File } from "../src/util/fs.ts";
@@ -44,7 +45,7 @@ test("fixtures separate copying the float helper from exact formatting", () => {
     const fixture = loadFixture(fixtures, name);
     const ws = buildArm(spec, fixture.arm);
     applyFixture(fixtures, name, ws.dir);
-    const result = verifyCandidate({ spec, armDir: buildArm(spec, fixture.arm).dir, candidateDir: ws.dir, expectedChecksSha256: checks });
+    const result = verifyCandidate({ runner: hostRunner, spec, armDir: buildArm(spec, fixture.arm).dir, candidateDir: ws.dir, expectedChecksSha256: checks });
     assert.equal(result.verdict, fixture.expect.verdict, `${name}: ${result.reasons.join("; ")}`);
     for (const want of fixture.expect.reasonIncludes) assert.ok(result.reasons.some((r) => r.includes(want)), `${name} missing ${want}`);
   }

@@ -25,6 +25,7 @@ export interface AttemptRecord {
   error?: string;
   observed?: RunOutcome["observed"];
   artifact?: ArtifactSnapshot | null;
+  artifactError?: string;
   verification: VerificationResult | null;
 }
 
@@ -69,6 +70,31 @@ export async function runPhase(opts: {
   const results: SlotResult[] = slots.map((slot) => ({ slot, verdict: "not_run", reasons: [], attempts: [], verification: null, claimedSuccessButFailed: false }));
   let stop: string | null = null;
   let next = 0;
+  let active = 0;
+  let waiters: Array<() => void> = [];
+  const settled = (): Promise<void> => new Promise((resolve) => waiters.push(resolve));
+  const release = (): void => {
+    active--;
+    const ready = waiters;
+    waiters = [];
+    for (const wake of ready) wake();
+  };
+  const reserveAttempt = async (slotKey: string, attempt: number): Promise<number | null> => {
+    for (;;) {
+      if (stop) return null;
+      const id = ledger.reserve(slotKey, attempt, experiment.limits.maxCostUsdPerAttempt, {
+        runId: opts.runId,
+        experiment: experiment.id,
+        experimentCapUsd: experiment.budget.experimentCapUsd,
+      });
+      if (id !== null) {
+        active++;
+        return id;
+      }
+      if (active === 0) return null;
+      await settled();
+    }
+  };
   const worker = async (): Promise<void> => {
     while (next < results.length) {
       const result = results[next++];
@@ -89,12 +115,13 @@ export async function runPhase(opts: {
         if (result.attempts.length > 0) result.verdict = "unknown";
         return;
       }
-      const reservation = ledger.reserve(slot.key, attempt, experiment.limits.maxCostUsdPerAttempt, {
-        runId: opts.runId,
-        experiment: experiment.id,
-        experimentCapUsd: experiment.budget.experimentCapUsd,
-      });
+      const reservation = await reserveAttempt(slot.key, attempt);
       if (reservation === null) {
+        if (stop) {
+          result.reasons.push(stop);
+          if (result.attempts.length > 0) result.verdict = "unknown";
+          return;
+        }
         stop = "budget cap reached";
         result.reasons.push(stop);
         if (result.attempts.length > 0) result.verdict = "unknown";
@@ -113,13 +140,24 @@ export async function runPhase(opts: {
         slotKey: slot.key,
       });
       const costKnown = typeof outcome.usage.costUsd === "number";
-      const cost = ledger.charge(reservation, outcome.usage.costUsd, outcome.usage.reportedCostUsd ?? outcome.usage.costUsd);
+      let cost: number;
+      try {
+        cost = ledger.charge(reservation, outcome.usage.costUsd, outcome.usage.reportedCostUsd ?? outcome.usage.costUsd);
+      } finally {
+        release();
+      }
       const record: AttemptRecord = {
         attempt, ledgerEntry: reservation, status: outcome.status, costUsd: cost, costKnown, turns: outcome.usage.turns,
         wallMs: outcome.usage.wallMs, usage: outcome.usage, transcriptPath: outcome.transcriptPath, claim: outcome.finalClaim,
-        error: outcome.error, verification: null, observed: outcome.observed,
-        artifact: opts.artifactDir ? snapshotWorkspace(ws.dir, opts.artifactDir, `${slot.key.replace(/:/g, "_")}_attempt${attempt}`) : null,
+        error: outcome.error, verification: null, observed: outcome.observed, artifact: null,
       };
+      if (opts.artifactDir) {
+        try {
+          record.artifact = snapshotWorkspace(ws.dir, opts.artifactDir, `${slot.key.replace(/:/g, "_")}_attempt${attempt}`);
+        } catch (err) {
+          record.artifactError = (err as Error).message;
+        }
+      }
       result.attempts.push(record);
       opts.onAttempt?.(result.slot.key, record, "session");
       const terminal = (): void => {
@@ -149,7 +187,7 @@ export async function runPhase(opts: {
       let verification: VerificationResult;
       try {
         const armRef = buildArm(caseSpec, slot.arm);
-        verification = verifyCandidate({ spec: caseSpec, armDir: armRef.dir, candidateDir: ws.dir, expectedChecksSha256: experiment.checksSha256, runner: opts.candidateRunner });
+        verification = verifyCandidate({ spec: caseSpec, armDir: armRef.dir, candidateDir: ws.dir, expectedChecksSha256: experiment.checksSha256, runner: opts.candidateRunner ?? hostRunner });
       } catch (err) {
         verification = unknownVerification(`verifier crashed: ${(err as Error).message}`);
       }

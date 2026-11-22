@@ -22,6 +22,8 @@ export interface Inventory {
   notes: string[];
 }
 
+const MAX_IMPORT_HOPS = 4;
+
 export function inventoryClaudeCode(repoDir: string, opts: { home?: string; ruleset?: ClaudeCodeRuleset } = {}): Inventory {
   const rules = opts.ruleset ?? DEMO_RULESET;
   const sources: InstructionSource[] = [];
@@ -46,20 +48,22 @@ export function inventoryClaudeCode(repoDir: string, opts: { home?: string; rule
     if (existsSync(user)) add(user, "user-memory", rules.userMemory);
   }
 
-  for (const src of [...sources]) {
-    if (!["memory", "nested-memory", "local-memory", "user-memory"].includes(src.kind)) continue;
-    const abs = src.kind === "user-memory" ? src.path : join(repoDir, src.path);
+  const queue = sources
+    .filter((src) => ["memory", "nested-memory", "local-memory", "user-memory"].includes(src.kind))
+    .map((src) => ({ path: src.path, absolute: src.kind === "user-memory", applies: src.shouldApply, hops: 0 }));
+  const visited = new Set(queue.map((q) => `${q.absolute}:${q.path}`));
+  while (queue.length > 0) {
+    const from = queue.shift()!;
+    const abs = from.absolute ? from.path : join(repoDir, from.path);
     for (const imp of parseImports(readFileSync(abs, "utf8"))) {
-      const target = src.kind === "user-memory" ? join(dirname(abs), imp) : normalize(join(dirname(src.path), imp));
-      const exists = existsSync(src.kind === "user-memory" ? target : join(repoDir, target));
-      sources.push({
-        path: target,
-        kind: "import",
-        found: exists,
-        shouldApply: exists ? rules.imports : "no",
-        observedLoaded: "unknown",
-        actedOn: "unknown",
-      });
+      const target = from.absolute ? join(dirname(abs), imp) : normalize(join(dirname(from.path), imp));
+      const key = `${from.absolute}:${target}`;
+      if (visited.has(key)) continue;
+      visited.add(key);
+      const exists = existsSync(from.absolute ? target : join(repoDir, target));
+      const applies: ApplyRule = !exists ? "no" : from.applies === "yes" ? rules.imports : from.applies;
+      sources.push({ path: target, kind: "import", found: exists, shouldApply: applies, observedLoaded: "unknown", actedOn: "unknown" });
+      if (exists && from.hops + 1 < MAX_IMPORT_HOPS) queue.push({ path: target, absolute: from.absolute, applies, hops: from.hops + 1 });
     }
   }
 
@@ -76,7 +80,7 @@ export function parseImports(markdown: string): string[] {
     }
     if (fenced) continue;
     const stripped = line.replace(/`[^`]*`/g, "");
-    for (const m of stripped.matchAll(/(?:^|\s)@([\w./~-]+\.\w+)/g)) out.push(m[1]);
+    for (const m of stripped.matchAll(/(?:^|\s)@([\w./~-]*\w)/g)) out.push(m[1]);
   }
   return out;
 }

@@ -13,6 +13,14 @@ export const CONTAINER_PATH = "/usr/local/bin:/usr/bin:/bin";
 const PROXY_SCRIPT = fileURLToPath(new URL("../../sandbox/egress-proxy.mjs", import.meta.url));
 const DOCKERFILE_DIR = fileURLToPath(new URL("../../sandbox", import.meta.url));
 
+const FALLBACK_USER = "1000:1000";
+
+export function containerUser(): string {
+  const uid = process.getuid?.();
+  const gid = process.getgid?.();
+  return uid === undefined || gid === undefined || uid === 0 ? FALLBACK_USER : `${uid}:${gid}`;
+}
+
 export function docker(args: string[], timeoutMs = 120_000): ProcResult {
   return runProcess("docker", args, { timeoutMs });
 }
@@ -37,8 +45,10 @@ export function ensureEgress(allowHosts = ["api.anthropic.com"]): void {
   ensureImage();
   ensureNetwork(INTERNAL_NETWORK, ["--internal"]);
   ensureNetwork(EGRESS_NETWORK);
-  const running = docker(["inspect", "-f", "{{.State.Running}} {{index .Config.Labels \"allow\"}}", PROXY_NAME]);
-  if (running.code === 0 && running.stdout.trim() === `true ${allowHosts.join(",")}`) return;
+  const running = docker(["inspect", "-f", "{{.State.Running}} {{index .Config.Labels \"allow\"}} {{range $name, $_ := .NetworkSettings.Networks}}{{$name}},{{end}}", PROXY_NAME]);
+  const [state, label, networks = ""] = running.stdout.trim().split(" ");
+  const attached = networks.split(",");
+  if (running.code === 0 && state === "true" && label === allowHosts.join(",") && attached.includes(EGRESS_NETWORK) && attached.includes(INTERNAL_NETWORK)) return;
   docker(["rm", "-f", PROXY_NAME]);
   const r = docker([
     "run", "-d", "--name", PROXY_NAME, "--label", `allow=${allowHosts.join(",")}`,
@@ -48,6 +58,7 @@ export function ensureEgress(allowHosts = ["api.anthropic.com"]): void {
   ]);
   if (r.code !== 0) throw new Error(`egress proxy failed to start: ${r.stderr.slice(-500)}`);
   const c = docker(["network", "connect", INTERNAL_NETWORK, PROXY_NAME]);
+  if (c.code !== 0) docker(["rm", "-f", PROXY_NAME]);
   if (c.code !== 0) throw new Error(`egress proxy could not join ${INTERNAL_NETWORK}: ${c.stderr.slice(-300)}`);
 }
 
@@ -63,7 +74,7 @@ export function runArgs(opts: { name: string; network: "none" | typeof INTERNAL_
   const args = [
     "run", "--rm", "--name", opts.name, "--network", opts.network,
     "--read-only", "--tmpfs", "/tmp:rw,size=256m", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
-    "--pids-limit", "512", "--memory", "2g", "--cpus", "2", "--user", "1000:1000", "-w", opts.workdir,
+    "--pids-limit", "512", "--memory", "2g", "--cpus", "2", "--user", containerUser(), "-w", opts.workdir,
   ];
   if (opts.interactive) args.push("-i");
   for (const m of opts.mounts) args.push("-v", `${m.host}:${m.container}${m.readOnly ? ":ro" : ""}`);

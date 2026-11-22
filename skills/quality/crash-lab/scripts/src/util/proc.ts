@@ -22,6 +22,7 @@ export function runProcess(
     cwd: opts.cwd,
     env: opts.env ?? process.env,
     timeout: opts.timeoutMs ?? 60_000,
+    killSignal: "SIGKILL",
     input: opts.input,
     encoding: "utf8",
     maxBuffer: 32 * 1024 * 1024,

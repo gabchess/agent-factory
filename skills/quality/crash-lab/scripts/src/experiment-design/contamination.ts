@@ -117,8 +117,29 @@ function heldOutMarkers(spec: CaseSpec): string[] {
   return [...markers];
 }
 
+function jsonAmounts(text: string): number[] {
+  let doc: unknown;
+  try {
+    doc = JSON.parse(text);
+  } catch {
+    return [];
+  }
+  const out: number[] = [];
+  const walk = (v: unknown): void => {
+    if (Array.isArray(v)) v.forEach(walk);
+    else if (v && typeof v === "object") {
+      for (const [k, child] of Object.entries(v)) {
+        if (k === "amount" && typeof child === "number") out.push(child);
+        else walk(child);
+      }
+    }
+  };
+  walk(doc);
+  return out;
+}
+
 function fixtureValueFindings(file: string, text: string): AuditFinding[] {
-  const amounts = [...text.matchAll(/"amount"\s*:\s*(-?[\d.]+)/g)].map((m) => Number(m[1]));
+  const amounts = jsonAmounts(text);
   if (amounts.length === 0) return [];
   const out: AuditFinding[] = [];
   if (amounts.some((a) => !Number.isInteger(a))) {

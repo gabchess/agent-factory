@@ -46,7 +46,7 @@ The agent failed the same held-out check in 19 of the 20 runs that started next 
 
 ## Main phase
 
-| Arm | Pass | Pass rate | 95% Wilson | Ended normally, failed | Reported USD |
+| Arm | Pass | Pass rate | 95% Wilson | Ended normally, failed | Charged USD |
 | --- | --- | --- | --- | --- | --- |
 | E0 silent | 0 of 10 | 0% | 0% to 28% | 10 | 0.74 |
 | E1 excused | 1 of 10 | 10% | 2% to 40% | 9 | 0.77 |

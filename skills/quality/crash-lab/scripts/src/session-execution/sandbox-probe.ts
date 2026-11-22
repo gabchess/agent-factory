@@ -11,6 +11,7 @@ import {
 } from "./sandbox.ts";
 
 const PROBE = fileURLToPath(new URL("../../sandbox/probe.mjs", import.meta.url));
+const PROBE_INVALID_KEY = "sk-ant-crashlab-probe-invalid";
 const LAB_ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 
 export interface ProbeCheck {
@@ -78,7 +79,7 @@ export function probeSandbox(spec: CaseSpec, checksSha256: string): { checks: Pr
   const claudeWs = buildArm(spec, spec.arms[0].id);
   const claude = docker(
     [
-      ...runArgs({ name: containerName("probe-claude"), network: INTERNAL_NETWORK, mounts: sessionMounts(claudeWs.dir, claudeHome), env: sessionEnv(), workdir: "/work" }),
+      ...runArgs({ name: containerName("probe-claude"), network: INTERNAL_NETWORK, mounts: sessionMounts(claudeWs.dir, claudeHome), env: { ...sessionEnv(), ANTHROPIC_API_KEY: PROBE_INVALID_KEY }, workdir: "/work" }),
       "claude", "-p", "Reply with OK.", "--model", "claude-haiku-5-5", "--output-format", "json", "--max-turns", "1", "--strict-mcp-config", "--no-session-persistence",
     ],
     120_000,

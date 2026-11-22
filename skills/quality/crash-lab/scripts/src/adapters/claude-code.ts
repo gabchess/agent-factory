@@ -6,6 +6,7 @@ import { inventoryClaudeCode } from "../instruction-context/inventory.ts";
 import { containerName, INTERNAL_NETWORK, runArgs, SANDBOX_IMAGE, sessionEnv, sessionMounts } from "../session-execution/sandbox.ts";
 import { chargeFor, type PriceTable } from "../session-execution/pricing.ts";
 import type { HarnessAdapter, HarnessVersion, ObservedSession, RunOutcome, RunRequest, Usage } from "./types.ts";
+import { StringDecoder } from "node:string_decoder";
 
 export interface ClaudeCodeOptions {
   bin: string;
@@ -63,6 +64,8 @@ async function runClaude(opts: ClaudeCodeOptions, req: RunRequest): Promise<RunO
   let spawnError: string | null = null;
   const observed: ObservedSession = { initModel: null, initTools: [], models: {}, toolCalls: {} };
   let buffer = "";
+  const stdoutText = new StringDecoder("utf8");
+  const stderrText = new StringDecoder("utf8");
   const { timedOut, wallMs } = await new Promise<{ timedOut: boolean; wallMs: number }>((resolve) => {
     const name = containerName("session");
     const child = opts.sandbox
@@ -83,7 +86,7 @@ async function runClaude(opts: ClaudeCodeOptions, req: RunRequest): Promise<RunO
     }, req.timeoutMs);
     child.stdout.on("data", (chunk: Buffer) => {
       if (!out.destroyed) out.write(chunk);
-      buffer += chunk.toString("utf8");
+      buffer += stdoutText.write(chunk);
       let nl: number;
       while ((nl = buffer.indexOf("\n")) >= 0) {
         const line = buffer.slice(0, nl);
@@ -105,7 +108,7 @@ async function runClaude(opts: ClaudeCodeOptions, req: RunRequest): Promise<RunO
       }
     });
     child.stderr.on("data", (c: Buffer) => {
-      stderr = (stderr + c.toString("utf8")).slice(-4000);
+      stderr = (stderr + stderrText.write(c)).slice(-4000);
     });
     child.on("error", (err) => {
       spawnError = err.message;

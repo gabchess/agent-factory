@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { appendFileSync, cpSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { reverifyAttempts } from "../src/artifact-verification/reverify.ts";
 import { makeTempDir } from "../src/util/fs.ts";
+import { hostRunner } from "../src/util/proc.ts";
 
 const caseSpec = loadDemoCase();
 const { spec: base, sha256 } = loadExperiment(EXPERIMENT);
@@ -263,7 +264,7 @@ test("a phase is re-verified from a different checkout of its evidence", async (
   const moved = join(makeTempDir(), "main");
   cpSync(original, moved, { recursive: true });
   rmSync(original, { recursive: true, force: true });
-  const entries = reverifyAttempts({ attemptsLog: join(moved, "attempts.jsonl"), caseSpec, checksSha256: exp.checksSha256 });
+  const entries = reverifyAttempts({ attemptsLog: join(moved, "attempts.jsonl"), caseSpec, checksSha256: exp.checksSha256, runner: hostRunner });
   assert.equal(entries.length, slots.length);
   assert.ok(entries.every((e) => e.match === true && e.problems.length === 0), JSON.stringify(entries));
 });
@@ -289,7 +290,7 @@ test("an interrupted phase is re-verified from retained snapshots after its work
   assert.ok(lines.filter((l) => l.stage === "terminal").every((l) => l.verification !== null), "terminal records carry the verifier result");
   const interrupted = lines.filter((l) => !(l.slot === slots[0].key && l.stage === "terminal"));
   writeFileSync(log, interrupted.map((l) => JSON.stringify(l)).join("\n") + "\n");
-  const entries = reverifyAttempts({ attemptsLog: log, caseSpec, checksSha256: exp.checksSha256 });
+  const entries = reverifyAttempts({ attemptsLog: log, caseSpec, checksSha256: exp.checksSha256, runner: hostRunner });
   assert.equal(entries.length, slots.length);
   for (const e of entries) {
     const original = results.find((r) => r.slot.key === e.slot)!;
@@ -300,4 +301,61 @@ test("an interrupted phase is re-verified from retained snapshots after its work
     } else assert.equal(e.match, true);
   }
   assert.ok(entries.some((e) => e.reverifiedVerdict === "fail"), "a broken candidate still fails on reverification");
+});
+
+test("reservations held by running sessions delay admission instead of stopping the phase", async () => {
+  const exp = small({ budget: { capUsd: 5, confirmed: false } });
+  const script: Record<string, ScriptedAttempt[]> = {};
+  for (const slot of schedule(exp, "main")) script[slot.key] = [ok(goodFor[slot.arm], 0.5)];
+  const ledger = newLedger(exp.budget.capUsd);
+  const results = await runPhase({ experiment: exp, caseSpec, phase: "main", adapter: fakeAdapter(FIXTURES, script), ledger, concurrency: 3 });
+  assert.equal(results.filter((r) => r.verdict === "not_run").length, 1, "only the slot that the remaining headroom cannot fund is left");
+  assert.ok(Math.abs(ledger.spentUsd - 3.5) < 1e-9);
+});
+
+test("a failed artifact snapshot keeps the charged attempt and its verdict", async () => {
+  const exp = small();
+  const script: Record<string, ScriptedAttempt[]> = {};
+  for (const slot of schedule(exp, "main")) script[slot.key] = [ok(goodFor[slot.arm])];
+  const artifactDir = makeTempDir();
+  writeFileSync(join(artifactDir, "main_A0_0_attempt1.tar"), "");
+  const seen: string[] = [];
+  const results = await runPhase({ experiment: exp, caseSpec, phase: "main", adapter: fakeAdapter(FIXTURES, script), ledger: newLedger(50), artifactDir, onAttempt: (k, _a, stage) => seen.push(`${k}:${stage}`) });
+  const slot = results.find((r) => r.slot.key === "main:A0:0")!;
+  assert.equal(slot.verdict, "pass");
+  assert.equal(slot.attempts.length, 1);
+  assert.match(slot.attempts[0].artifactError ?? "", /already exists/);
+  assert.ok(seen.includes("main:A0:0:session") && seen.includes("main:A0:0:terminal"));
+});
+
+test("disabled retries add no expected or worst-case attempts", () => {
+  const plan = planCost({ ...base, retries: { ...base.retries, maxRetriesPerSlot: 0 } }, { low: 0.3, high: 1 });
+  assert.equal(plan.expectedAttempts, 52);
+  assert.equal(plan.worstCaseAttempts, 52);
+  const none = planCost({ ...base, retries: { ...base.retries, retryOn: [] } }, { low: 0.3, high: 1 });
+  assert.equal(none.expectedAttempts, 52);
+  assert.equal(none.worstCaseAttempts, 52);
+});
+
+test("an experiment with a repeated arm is rejected before any spend", () => {
+  const path = join(makeTempDir(), "dup.json");
+  writeFileSync(path, JSON.stringify({ ...JSON.parse(readFileSync(EXPERIMENT, "utf8")), arms: ["A0", "A0"] }));
+  assert.throws(() => loadExperiment(path), /arms must be unique/);
+});
+
+test("a ledger lock left by a dead runner is recovered", () => {
+  const path = join(makeTempDir(), "ledger.json");
+  writeFileSync(`${path}.lock`, "999999999");
+  const ledger = BudgetLedger.open(path, 2);
+  assert.equal(readFileSync(`${path}.lock`, "utf8"), String(process.pid));
+  ledger.close();
+});
+
+test("a truncated attempts log line is reported, not thrown", () => {
+  const log = join(makeTempDir(), "attempts.jsonl");
+  writeFileSync(log, '{"slot":"main:A0:0"');
+  const entries = reverifyAttempts({ attemptsLog: log, caseSpec, checksSha256: base.checksSha256, runner: hostRunner });
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].artifactOk, false);
+  assert.match(entries[0].problems[0], /not JSON/);
 });

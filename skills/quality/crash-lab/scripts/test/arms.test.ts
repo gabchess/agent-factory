@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { buildArm } from "../src/experiment-design/arms.ts";
@@ -41,4 +41,10 @@ test("base tests pass in every arm", () => {
     const r = runProcess("node", ["--test", "test/**/*.test.ts"], { cwd: dir, env: sandboxEnv(makeTempDir("home-")) });
     assert.equal(r.code, 0, `${arm.id}: ${r.stdout}${r.stderr}`);
   }
+});
+
+test("an arm is never built into a folder that already has files", () => {
+  const out = makeTempDir();
+  writeFileSync(join(out, "stray.txt"), "x\n");
+  assert.throws(() => buildArm(spec, "A0", out), /is not empty/);
 });

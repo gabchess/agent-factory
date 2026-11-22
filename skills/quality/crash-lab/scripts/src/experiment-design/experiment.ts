@@ -48,6 +48,7 @@ export function loadExperiment(path: string): { spec: ExperimentSpec; sha256: st
     "budget.capUsd": "number", "budget.confirmed": "boolean", alpha: "number", invalidIfUnresolvedShareAbove: "number",
     checksSha256: "string", seed: "number", comparisons: "array", hypotheses: "string[]",
   });
+  if (new Set((raw as ExperimentSpec).arms).size !== (raw as ExperimentSpec).arms.length) throw new Error(`${path}: arms must be unique`);
   (raw as { comparisons: unknown[] }).comparisons.forEach((c, i) => {
     expectShape(`${path} comparisons[${i}]`, c, { a: "string", b: "string", role: "string", question: "string" });
     if (!["primary", "exploratory"].includes((c as Comparison).role)) throw new Error(`${path} comparisons[${i}]: role must be primary or exploratory`);
@@ -118,11 +119,12 @@ export function planCost(spec: ExperimentSpec, perAttemptUsd: { low: number; hig
   const phases: Phase[] = ["smoke", "pilot", "main"];
   const rows = phases.map((phase) => {
     const slots = spec.phases[phase].runsPerArm * spec.arms.length;
+    const retryAllowance = spec.retries.retryOn.length === 0 ? 0 : spec.retries.maxRetriesPerSlot;
     return {
       phase,
       slots,
-      expectedAttempts: slots + Math.ceil(slots * retryRate),
-      worstCaseAttempts: slots * (1 + spec.retries.maxRetriesPerSlot),
+      expectedAttempts: slots + Math.min(Math.ceil(slots * retryRate), slots * retryAllowance),
+      worstCaseAttempts: slots * (1 + retryAllowance),
     };
   });
   const expectedAttempts = rows.reduce((s, r) => s + r.expectedAttempts, 0);

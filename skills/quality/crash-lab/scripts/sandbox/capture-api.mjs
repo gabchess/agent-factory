@@ -6,6 +6,7 @@ import { createServer } from "node:http";
 const out = process.argv[2];
 createServer((req, res) => {
   let body = "";
+  req.setEncoding("utf8");
   req.on("data", (c) => (body += c));
   req.on("end", () => {
     appendFileSync(out, JSON.stringify({ method: req.method, url: req.url, body }) + "\n");

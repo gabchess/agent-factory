@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { copyTree, hashTree, makeTempDir } from "../util/fs.ts";
 import { initSingleCommitRepo } from "../util/git.ts";
@@ -13,6 +13,7 @@ export interface BuiltArm {
 
 export function buildArm(spec: CaseSpec, armId: string, outDir?: string): BuiltArm {
   const arm = getArm(spec, armId);
+  if (outDir && existsSync(outDir) && readdirSync(outDir).length > 0) throw new Error(`arm destination ${outDir} is not empty`);
   const dir = outDir ?? makeTempDir("ws-");
   copyTree(spec.baseDir, dir);
   for (const op of arm.ops) applyOp(spec, dir, op);

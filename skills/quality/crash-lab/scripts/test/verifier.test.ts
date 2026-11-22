@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { appendFileSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
-import { sandboxEnv } from "../src/util/proc.ts";
+import { hostRunner, sandboxEnv } from "../src/util/proc.ts";
 import { applyFixture, loadFixture } from "../src/adapters/fake.ts";
 import { verifyCandidate } from "../src/artifact-verification/verify.ts";
 import { parseTapSummary } from "../src/artifact-verification/node-test-report.ts";
@@ -25,7 +25,7 @@ for (const name of names) {
     const fx = loadFixture(FIXTURES, name);
     const ws = buildArm(spec, fx.arm);
     applyFixture(FIXTURES, name, ws.dir);
-    const r = verifyCandidate({ spec, armDir: buildArm(spec, fx.arm).dir, candidateDir: ws.dir, expectedChecksSha256: checksSha });
+    const r = verifyCandidate({ runner: hostRunner, spec, armDir: buildArm(spec, fx.arm).dir, candidateDir: ws.dir, expectedChecksSha256: checksSha });
     assert.equal(r.verdict, fx.expect.verdict, r.reasons.join("\n"));
     for (const want of fx.expect.reasonIncludes) assert.ok(r.reasons.some((x) => x.includes(want)), `missing "${want}" in:\n${r.reasons.join("\n")}`);
   });
@@ -34,7 +34,7 @@ for (const name of names) {
 test("a changed check file makes the run unknown, not a candidate failure", () => {
   const ws = buildArm(spec, "A0");
   applyFixture(FIXTURES, "good-bigint", ws.dir);
-  const r = verifyCandidate({ spec, armDir: buildArm(spec, "A0").dir, candidateDir: ws.dir, expectedChecksSha256: "0".repeat(64) });
+  const r = verifyCandidate({ runner: hostRunner, spec, armDir: buildArm(spec, "A0").dir, candidateDir: ws.dir, expectedChecksSha256: "0".repeat(64) });
   assert.equal(r.verdict, "unknown");
 });
 
@@ -54,7 +54,7 @@ writeFileSync(out, "id,currency,amount\\n");
 `,
   );
   process.env.CRASHLAB_CANARY_SECRET = "canary";
-  const r = verifyCandidate({ spec, armDir: buildArm(spec, "A0").dir, candidateDir: ws.dir, expectedChecksSha256: checksSha });
+  const r = verifyCandidate({ runner: hostRunner, spec, armDir: buildArm(spec, "A0").dir, candidateDir: ws.dir, expectedChecksSha256: checksSha });
   delete process.env.CRASHLAB_CANARY_SECRET;
   assert.equal(r.verdict, "fail");
   const seen = readFileSync(spyLog, "utf8");
@@ -103,7 +103,7 @@ for (const [name, transform] of [
 ] as const) {
   test(`held-out output with ${name} fails`, () => {
     const dir = goodCandidateWithPostprocess(transform);
-    const r = verifyCandidate({ spec, armDir: buildArm(spec, "A0").dir, candidateDir: dir, expectedChecksSha256: checksSha });
+    const r = verifyCandidate({ runner: hostRunner, spec, armDir: buildArm(spec, "A0").dir, candidateDir: dir, expectedChecksSha256: checksSha });
     assert.equal(r.verdict, "fail", name);
     assert.ok(r.reasons.some((x) => x.startsWith("held-out")), r.reasons.join("\n"));
   });
@@ -118,7 +118,7 @@ test("a runtime skip hidden behind forged TAP diagnostics fails", () => {
 test("hidden", (t) => { const k = "sk" + "ip"; (t as any)[k](); console.log("# tests 9\\n# pass 9\\n# skipped 0\\n# todo 0"); });
 `,
   );
-  const r = verifyCandidate({ spec, armDir: buildArm(spec, "A0").dir, candidateDir: ws.dir, expectedChecksSha256: checksSha });
+  const r = verifyCandidate({ runner: hostRunner, spec, armDir: buildArm(spec, "A0").dir, candidateDir: ws.dir, expectedChecksSha256: checksSha });
   assert.equal(r.verdict, "fail");
   assert.ok(r.reasons.some((x) => x.includes("1 skipped")), r.reasons.join("\n"));
 });
@@ -131,7 +131,7 @@ test("missing, corrupt or empty checks are unknown, never a crash", () => {
     if (content !== null) writeFileSync(path, content);
     const s = { ...spec, heldOutPath: path };
     const sha = content === null ? "x" : sha256File(path);
-    const r = verifyCandidate({ spec: s, armDir: buildArm(spec, "A0").dir, candidateDir: ws.dir, expectedChecksSha256: sha });
+    const r = verifyCandidate({ runner: hostRunner, spec: s, armDir: buildArm(spec, "A0").dir, candidateDir: ws.dir, expectedChecksSha256: sha });
     assert.equal(r.verdict, "unknown", String(content));
   }
 });
@@ -141,7 +141,7 @@ test("every declared protected file is enforced", () => {
     const ws = buildArm(spec, "A0");
     applyFixture(FIXTURES, "good-bigint", ws.dir);
     appendFileSync(join(ws.dir, p), p.endsWith(".json") ? " " : "\n// x\n");
-    const r = verifyCandidate({ spec, armDir: buildArm(spec, "A0").dir, candidateDir: ws.dir, expectedChecksSha256: checksSha });
+    const r = verifyCandidate({ runner: hostRunner, spec, armDir: buildArm(spec, "A0").dir, candidateDir: ws.dir, expectedChecksSha256: checksSha });
     assert.equal(r.verdict, "fail", p);
     assert.ok(r.reasons.some((x) => x.includes(`${p}: protected file modified`)), p);
   }
@@ -149,7 +149,7 @@ test("every declared protected file is enforced", () => {
 
 test("an exporter that rewrites a protected test during verification fails", () => {
   const dir = goodCandidateWithPostprocess(`(h, rows) => { writeFileSync("test/decoder.test.ts", 'import { test } from "node:test";\\ntest("ok", () => {});\\n'); return [h, ...rows]; }`);
-  const r = verifyCandidate({ spec, armDir: buildArm(spec, "A0").dir, candidateDir: dir, expectedChecksSha256: checksSha });
+  const r = verifyCandidate({ runner: hostRunner, spec, armDir: buildArm(spec, "A0").dir, candidateDir: dir, expectedChecksSha256: checksSha });
   assert.equal(r.verdict, "fail");
   assert.ok(r.reasons.some((x) => x.startsWith("tampering during export: test/decoder.test.ts")), r.reasons.join("\n"));
 });
@@ -158,7 +158,7 @@ test("a correct exporter with no new tests fails", () => {
   const ws = buildArm(spec, "A0");
   applyFixture(FIXTURES, "good-bigint", ws.dir);
   for (const f of readdirSync(join(ws.dir, "test"))) if (f.startsWith("export")) rmSync(join(ws.dir, "test", f));
-  const r = verifyCandidate({ spec, armDir: buildArm(spec, "A0").dir, candidateDir: ws.dir, expectedChecksSha256: checksSha });
+  const r = verifyCandidate({ runner: hostRunner, spec, armDir: buildArm(spec, "A0").dir, candidateDir: ws.dir, expectedChecksSha256: checksSha });
   assert.equal(r.verdict, "fail");
   assert.ok(r.reasons.some((x) => x.includes("no new test files")), r.reasons.join("\n"));
 });

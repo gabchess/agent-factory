@@ -42,8 +42,14 @@ export class BudgetLedger {
     try {
       fd = openSync(lockPath, "wx");
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === "EEXIST") throw new Error(`ledger ${path} is locked by another runner`);
-      throw new Error(`ledger lock ${lockPath} could not be created: ${(err as Error).message}`, { cause: err });
+      if ((err as NodeJS.ErrnoException).code !== "EEXIST") throw new Error(`ledger lock ${lockPath} could not be created: ${(err as Error).message}`, { cause: err });
+      if (lockOwnerAlive(lockPath)) throw new Error(`ledger ${path} is locked by another runner`);
+      unlinkSync(lockPath);
+      try {
+        fd = openSync(lockPath, "wx");
+      } catch {
+        throw new Error(`ledger ${path} is locked by another runner`);
+      }
     }
     try {
       writeFileSync(fd, String(process.pid));
@@ -139,4 +145,15 @@ function parseStoredLedger(path: string, text: string): { capUsd: number; entrie
     if (!ok) throw new Error(`ledger ${path} entry ${i} needs an integer id, a slot, a non-negative reservedUsd, and non-negative or null chargedUsd and reportedUsd`);
   });
   return { capUsd: shape.capUsd, entries: shape.entries as LedgerEntry[] };
+}
+
+function lockOwnerAlive(lockPath: string): boolean {
+  const pid = Number(readFileSync(lockPath, "utf8").trim());
+  if (!Number.isInteger(pid) || pid <= 0) return true;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (err) {
+    return (err as NodeJS.ErrnoException).code === "EPERM";
+  }
 }

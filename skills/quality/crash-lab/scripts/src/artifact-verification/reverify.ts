@@ -20,16 +20,23 @@ export interface ReverifyEntry {
 
 type LoggedAttempt = AttemptRecord & { slot: string; stage: AttemptStage };
 
-export function reverifyAttempts(opts: { attemptsLog: string; caseSpec: CaseSpec; checksSha256: string; runner?: CandidateRunner }): ReverifyEntry[] {
+export function reverifyAttempts(opts: { attemptsLog: string; caseSpec: CaseSpec; checksSha256: string; runner: CandidateRunner }): ReverifyEntry[] {
   const latest = new Map<string, LoggedAttempt>();
-  for (const line of readFileSync(opts.attemptsLog, "utf8").split("\n")) {
+  const out: ReverifyEntry[] = [];
+  const lines = readFileSync(opts.attemptsLog, "utf8").split("\n");
+  for (const [i, line] of lines.entries()) {
     if (!line.trim()) continue;
-    const rec = JSON.parse(line) as LoggedAttempt;
+    let rec: LoggedAttempt;
+    try {
+      rec = JSON.parse(line) as LoggedAttempt;
+    } catch (err) {
+      out.push({ slot: `line ${i + 1}`, attempt: 0, status: "harness_error", recordedVerdict: null, reverifiedVerdict: null, match: null, artifactOk: false, problems: [`attempts log line ${i + 1} is not JSON: ${(err as Error).message}`] });
+      continue;
+    }
     const key = `${rec.slot}#${rec.attempt}`;
     const prev = latest.get(key);
     if (!prev || prev.stage === "session") latest.set(key, rec);
   }
-  const out: ReverifyEntry[] = [];
   for (const rec of latest.values()) {
     const recordedVerdict = rec.stage === "terminal" ? (rec.verification?.verdict ?? null) : null;
     const entry: ReverifyEntry = { slot: rec.slot, attempt: rec.attempt, status: rec.status, recordedVerdict, reverifiedVerdict: null, match: null, artifactOk: true, problems: [] };
@@ -43,13 +50,17 @@ export function reverifyAttempts(opts: { attemptsLog: string; caseSpec: CaseSpec
     entry.problems.push(...artifactProblems);
     entry.artifactOk = artifactProblems.length === 0;
     if (artifact && artifactProblems.length === 0) {
-      const dir = extractSnapshot(artifact);
+      let dir: string | null = null;
       try {
+        dir = extractSnapshot(artifact);
         const v = verifyCandidate({ spec: opts.caseSpec, armDir: buildArm(opts.caseSpec, rec.slot.split(":")[1]).dir, candidateDir: dir, expectedChecksSha256: opts.checksSha256, runner: opts.runner });
         entry.reverifiedVerdict = v.verdict;
         entry.match = recordedVerdict === null ? null : recordedVerdict === v.verdict;
+      } catch (err) {
+        entry.artifactOk = false;
+        entry.problems.push(`reverification failed: ${(err as Error).message}`);
       } finally {
-        rmSync(dir, { recursive: true, force: true });
+        if (dir) rmSync(dir, { recursive: true, force: true });
       }
     }
     out.push(entry);

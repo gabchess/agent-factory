@@ -19,6 +19,7 @@ import { inventoryClaudeCode } from "../instruction-context/inventory.ts";
 import { verifyCandidate } from "../artifact-verification/verify.ts";
 import { applyFixture, loadFixture } from "../adapters/fake.ts";
 import { sha256File } from "../util/fs.ts";
+import { hostRunner } from "../util/proc.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const caseDir = (id: string): string => join(ROOT, "cases", id);
@@ -38,7 +39,7 @@ const commands: Record<string, (args: string[]) => number> = {
     const phaseDir = resolve(arg(args, "run"));
     const { spec: experiment } = loadExperiment(resolve(arg(args, "experiment", DEFAULT_EXPERIMENT)));
     const caseSpec = loadCase(caseDir(experiment.case));
-    const entries = reverifyAttempts({ attemptsLog: join(phaseDir, "attempts.jsonl"), caseSpec, checksSha256: experiment.checksSha256, runner: args.includes("--host") ? undefined : dockerRunner });
+    const entries = reverifyAttempts({ attemptsLog: join(phaseDir, "attempts.jsonl"), caseSpec, checksSha256: experiment.checksSha256, runner: args.includes("--host") ? hostRunner : dockerRunner });
     const out = join(phaseDir, `reverify-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
     writeFileSync(out, JSON.stringify(entries, null, 2));
     for (const e of entries) console.log(`${e.slot}#${e.attempt} ${e.status} recorded=${e.recordedVerdict ?? "none"} reverified=${e.reverifiedVerdict ?? "-"} ${e.match === false ? "MISMATCH " : ""}${e.problems.join("; ")}`);
@@ -73,7 +74,7 @@ const commands: Record<string, (args: string[]) => number> = {
   verify(args) {
     const spec = loadCase(caseDir(arg(args, "case", DEFAULT_CASE)));
     const armDir = buildArm(spec, arg(args, "arm")).dir;
-    const result = verifyCandidate({ spec, armDir, candidateDir: resolve(arg(args, "candidate")), expectedChecksSha256: sha256File(spec.heldOutPath) });
+    const result = verifyCandidate({ spec, armDir, candidateDir: resolve(arg(args, "candidate")), expectedChecksSha256: sha256File(spec.heldOutPath), runner: args.includes("--host") ? hostRunner : dockerRunner });
     console.log(JSON.stringify(result, null, 2));
     return result.verdict === "pass" ? 0 : 1;
   },
@@ -86,7 +87,7 @@ const commands: Record<string, (args: string[]) => number> = {
       const fx = loadFixture(fixturesDir(id), name);
       const ws = buildArm(spec, fx.arm);
       applyFixture(fixturesDir(id), name, ws.dir);
-      const result = verifyCandidate({ spec, armDir: buildArm(spec, fx.arm).dir, candidateDir: ws.dir, expectedChecksSha256: checks, runner: args.includes("--sandbox") ? dockerRunner : undefined });
+      const result = verifyCandidate({ spec, armDir: buildArm(spec, fx.arm).dir, candidateDir: ws.dir, expectedChecksSha256: checks, runner: args.includes("--sandbox") ? dockerRunner : hostRunner });
       const missing = fx.expect.reasonIncludes.filter((want) => !result.reasons.some((r) => r.includes(want)));
       const match = result.verdict === fx.expect.verdict && missing.length === 0;
       if (!match) mismatches++;

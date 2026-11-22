@@ -38,24 +38,37 @@ const walk = (dir) => {
 for (const root of cfg.scanRoots ?? ["/"]) walk(root);
 out.filesScanned = scanned;
 
-const withTimeout = (p, ms = 8000) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
-const tcp = (host, port) => withTimeout(new Promise((res, rej) => {
-  const s = connect(port, host, () => { s.destroy(); res("connected"); });
-  s.on("error", (e) => rej(e));
-}));
-const viaProxy = (proxy, target) => withTimeout(new Promise((res, rej) => {
+const withTimeout = (p, ms = 8000, sockets = []) => {
+  let timer;
+  const timeout = new Promise((_, rej) => { timer = setTimeout(() => { for (const s of sockets) s.destroy(); rej(new Error("timeout")); }, ms); });
+  return Promise.race([p, timeout]).finally(() => clearTimeout(timer));
+};
+const tcp = (host, port) => {
+  const sockets = [];
+  return withTimeout(new Promise((res, rej) => {
+    const s = connect(port, host, () => { s.destroy(); res("connected"); });
+    sockets.push(s);
+    s.on("error", (e) => rej(e));
+  }), 8000, sockets);
+};
+const viaProxy = (proxy, target) => {
+  const sockets = [];
+  return withTimeout(new Promise((res, rej) => {
   const u = new URL(proxy);
   const s = connect(Number(u.port), u.hostname, () => s.write(`CONNECT ${target} HTTP/1.1\r\nHost: ${target}\r\n\r\n`));
+  sockets.push(s);
   s.once("data", (d) => {
     const status = d.toString().split(" ")[1];
     if (status !== "200") { s.destroy(); return res(`proxy ${status}`); }
     const [host] = target.split(":");
     const t = tlsConnect({ socket: s, servername: host }, () => t.write(`GET /v1/models HTTP/1.1\r\nHost: ${host}\r\nanthropic-version: 2023-06-01\r\nConnection: close\r\n\r\n`));
+    sockets.push(t);
     t.once("data", (r) => { t.destroy(); res(`tunnel ok, upstream ${r.toString().split(" ")[1]}`); });
     t.on("error", rej);
   });
   s.on("error", rej);
-}));
+  }), 8000, sockets);
+};
 const settle = async (f) => { try { return await f(); } catch (e) { return `error: ${e.code ?? e.message}`; } };
 const proxy = process.env.HTTPS_PROXY;
 if (proxy) {

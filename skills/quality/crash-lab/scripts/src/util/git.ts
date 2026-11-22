@@ -15,10 +15,21 @@ const NEUTRAL_ENV = {
 
 export const NEUTRAL_COMMIT_MESSAGE = "Initial commit";
 
+const REPOSITORY_LOCATION_ENV = [
+  "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+  "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_CEILING_DIRECTORIES", "GIT_DISCOVERY_ACROSS_FILESYSTEM",
+];
+
+function gitEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  for (const key of REPOSITORY_LOCATION_ENV) delete env[key];
+  return { ...env, ...NEUTRAL_ENV };
+}
+
 export function git(cwd: string, args: string[]): string {
   return execFileSync("git", args, {
     cwd,
-    env: { ...process.env, ...NEUTRAL_ENV },
+    env: gitEnv(),
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   }).trim();

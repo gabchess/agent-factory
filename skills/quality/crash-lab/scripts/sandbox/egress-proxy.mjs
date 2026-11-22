@@ -11,6 +11,8 @@ const server = createServer((req, res) => {
   res.writeHead(403).end("egress denied\n");
 });
 server.on("connect", (req, client, head) => {
+  let upstream = null;
+  client.on("error", () => upstream?.destroy());
   const [host, port] = String(req.url).toLowerCase().split(":");
   if (!allow.has(host) || port !== "443") {
     log({ decision: "deny", method: "CONNECT", target: req.url });
@@ -18,13 +20,12 @@ server.on("connect", (req, client, head) => {
     return;
   }
   log({ decision: "allow", method: "CONNECT", target: req.url });
-  const upstream = connect(443, host, () => {
+  upstream = connect(443, host, () => {
     client.write("HTTP/1.1 200 Connection Established\r\n\r\n");
     upstream.write(head);
     upstream.pipe(client);
     client.pipe(upstream);
   });
   upstream.on("error", () => client.destroy());
-  client.on("error", () => upstream.destroy());
 });
 server.listen(3128, () => log({ decision: "listening", allow: [...allow] }));

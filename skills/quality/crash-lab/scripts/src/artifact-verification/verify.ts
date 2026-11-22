@@ -1,7 +1,7 @@
 import { copyTree, listFiles, makeTempDir, sha256File } from "../util/fs.ts";
 
 const isTestFile = (f: string): boolean => /^test\/.*\.test\.[cm]?[jt]s$/.test(f);
-import { hostRunner, sandboxEnv, type CandidateRunner } from "../util/proc.ts";
+import { sandboxEnv, type CandidateRunner } from "../util/proc.ts";
 import type { CaseSpec } from "../experiment-design/case.ts";
 import { loadHeldOut, runHeldOut, type HeldOutResult } from "./heldout.ts";
 import { COUNT_REPORTER, parseReporterCounts, type TestCounts } from "./node-test-report.ts";
@@ -25,7 +25,7 @@ export interface VerifyInput {
   armDir: string;
   candidateDir: string;
   expectedChecksSha256: string;
-  runner?: CandidateRunner;
+  runner: CandidateRunner;
 }
 
 export function unknownVerification(reason: string, checksSha256 = "", tampering: TamperFinding[] = []): VerificationResult {
@@ -39,7 +39,7 @@ export function verifyCandidate(input: VerifyInput): VerificationResult {
     failedAreas.add(area);
     reasons.push(`${area}: ${detail}`);
   };
-  const runner = input.runner ?? hostRunner;
+  const runner = input.runner;
   const unknown = unknownVerification;
   let checksSha256: string;
   let orders: ReturnType<typeof loadHeldOut>;
