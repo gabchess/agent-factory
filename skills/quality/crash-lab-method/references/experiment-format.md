@@ -21,7 +21,7 @@ Keep the lab folder outside the target repository and outside every run folder. 
 
 ## Verifier
 
-Any command that takes one folder and exits 0 for correct work, 1 for wrong work with the reason on its first output line, and any other code when it breaks. Catch your own errors and exit 2, so a crash never reads as a caught mistake. `rehearse` puts the folder where the command says `{dir}`, for example `node verify/check.mjs {dir}` or `bash verify/check.sh {dir}`. It runs without a shell, with a two minute limit per fixture.
+Any command that takes one folder and exits 0 for correct work, 1 for wrong work with the reason on the first line of standard output, and any other code when it breaks. Catch your own errors and exit 2, so a crash never reads as a caught mistake. `rehearse` puts the folder where the command says `{dir}`, for example `node verify/check.mjs {dir}` or `bash verify/check.sh {dir}`. It runs without a shell, with a two minute limit per fixture.
 
 ## experiment.json
 

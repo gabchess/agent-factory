@@ -138,3 +138,12 @@ test("rehearse counts a crashing verifier as broken, not as a caught mistake", (
   assert.equal(r.code, 1);
   assert.match(r.out, /\| bad \| fail \| error: exit 3 \| MISMATCH \|/);
 });
+
+test("budget and plan refuse spend a fraction of a cent over the cap", () => {
+  const dir = lab({ E0: 0, E1: 1, E2: 10 });
+  writeFileSync(join(dir, "results.jsonl"), JSON.stringify({ arm: "E0", run: 0, verdict: "pass", costUsd: 0.004 }) + "\n");
+  writeFileSync(join(dir, "experiment.json"), JSON.stringify({ id: "x", arms: ["E0", "E1"], runsPerArm: 1, budget: { capUsd: 0.01 }, comparisons: [{ a: "E0", b: "E1", role: "primary" }] }));
+  const script = isolatedScript();
+  assert.equal(run(script, ["budget", "--experiment", "experiment.json", "--results", "results.jsonl", "--next-cost", "0.0064"], dir).code, 1);
+  assert.equal(run(script, ["plan", "--runs", "10", "--arms", "3", "--cost-per-run", "0.074", "--cap", "2.1"]).code, 1);
+});

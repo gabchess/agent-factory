@@ -82,7 +82,7 @@ export function wilson(passes, n) {
   return [Math.max(0, centre - half), Math.min(1, centre + half)];
 }
 
-const cents = (x) => Math.round(x * 100);
+const fits = (spend, cap) => spend <= cap + 1e-9;
 const pct = (x) => `${Math.round(x * 100)}%`;
 const usd = (x) => `$${x.toFixed(2)}`;
 
@@ -109,7 +109,7 @@ function plan(opts) {
     lines.push("", `Estimated main phase cost: ${runs * arms} runs at ${usd(each)} = ${usd(total)}.`);
     if (opts.cap !== undefined) {
       const cap = money(opts.cap, "cap");
-      ok = cents(each) * runs * arms <= cents(cap);
+      ok = fits(total, cap);
       lines.push(ok ? `Within the ${usd(cap)} cap.` : `Over the ${usd(cap)} cap: lower the runs or raise the cap with the owner's approval.`);
     }
   }
@@ -130,7 +130,7 @@ function rehearse(opts, command) {
     const said = run.error ? `error: ${run.error.message}` : run.status === 0 ? "pass" : run.status === 1 ? "fail" : `error: ${run.signal ?? `exit ${run.status}`}`;
     const ok = said === c.expect;
     if (!ok) mismatches++;
-    const firstLine = `${run.stdout ?? ""}${run.stderr ?? ""}`.trim().split(/\r?\n/)[0] ?? "";
+    const firstLine = ((run.stdout ?? "").trim() || (run.stderr ?? "").trim()).split(/\r?\n/)[0];
     lines.push(`| ${c.dir} | ${c.expect} | ${said} | ${ok ? "ok" : "MISMATCH"} | ${firstLine.replaceAll("|", "\\|").slice(0, 120)} |`);
   }
   lines.push("", mismatches === 0 ? "Verifier rehearsal passed: every fixture got the expected verdict. Check that each bad fixture's output names the mistake it replays." : `Verifier rehearsal failed: ${mismatches} fixture(s) got the wrong verdict or broke the verifier. Fix the verifier before any paid run.`);
@@ -172,7 +172,7 @@ function budget(opts) {
   const results = String(need(opts, "results")).split(",").filter(Boolean).flatMap((path) => loadResults(path, { missingIsEmpty: true }));
   const next = money(need(opts, "next-cost"), "next-cost");
   const total = spent(results);
-  const ok = cents(total) + cents(next) <= cents(exp.budget.capUsd);
+  const ok = fits(total + next, exp.budget.capUsd);
   console.log(`${usd(total)} spent of the ${usd(exp.budget.capUsd)} cap. The next run, at up to ${usd(next)}, ${ok ? "fits" : "could cross the cap: stop and mark the remaining runs not_run"}.`);
   return ok ? 0 : 1;
 }
