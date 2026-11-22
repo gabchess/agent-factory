@@ -10,10 +10,10 @@ Each slot (one scheduled run of one arm) ends as one of four verdicts:
 | --- | --- |
 | `pass` | The session completed, the held-out results match the oracle exactly, the agent's tests pass with none skipped, cancelled or todo, and no protected file changed |
 | `fail` | Any of those checks failed, or the session timed out, hit its cost cap, or went over its turn or time limit |
-| `unknown` | The harness errored on every retry, or the verifier itself broke |
-| `not_run` | The next attempt could have crossed the spend cap, or the provider's credit ran out |
+| `unknown` | The harness errored on every allowed attempt, the spend cap stopped the slot after an attempt had run, or the verifier itself broke |
+| `not_run` | The first attempt could have crossed the spend cap, or the provider's credit ran out |
 
-How each session ended is recorded. A session that timed out or hit its budget fails without verification, and a harness error is retried; a slot whose attempts all end in harness errors stays `unknown`. A normal finish (the lab's "claimed success") is counted but never passes a slot: only verification can. A report is invalid when more than the experiment's `invalidIfUnresolvedShareAbove` share of slots is unknown.
+How each session ended is recorded. A session that timed out or hit its budget fails without verification, and a harness error is retried up to `retries.maxRetriesPerSlot` times only when `retries.retryOn` lists `harness_error` and the ledger can reserve the next attempt. A normal finish (the lab's "claimed success") is counted but never passes a slot: only verification can. A report is invalid when more than the experiment's `invalidIfUnresolvedShareAbove` share of slots is unknown.
 
 ## Phases
 
