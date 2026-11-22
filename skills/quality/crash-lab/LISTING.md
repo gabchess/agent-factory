@@ -22,7 +22,7 @@ Before any money is spent, the skill makes the agent prove the verifier: every k
 
 You get a Markdown report with pass rates and 95% Wilson intervals, a Fisher exact test on one pre-registered comparison, the cost the harness reported next to the cost the lab charged, every failure reason, and a proposed decision for the instruction (keep, shorten, move into code, repair or remove). It says "inconclusive" when the data cannot tell, and never calls that equivalence.
 
-Two cases ship with it. `legacy-cents` tests whether a "minor units" instruction line is load-bearing. `excuse-contagion` tests whether a "fine for now" comment on a float helper spreads the hack into new code. Add your own instruction file as a new arm to measure it on either task.
+Two cases ship with it. `legacy-cents` tests whether a "minor units" instruction line is load-bearing. `excuse-contagion` tests whether a "fine for now" comment on a float helper spreads the hack into new code. Paste your own instructions into a new arm's `CLAUDE.md` to measure them on either task.
 
 ## Demo
 
@@ -118,7 +118,7 @@ One-time, $9.
 ## FAQ
 
 - Does it spend money? Only in live runs, on your Anthropic API key, and only after you approve a dollar cap. Install, fixture rehearsal, audits and the sandbox probe are free.
-- Can I test my own AGENTS.md or CLAUDE.md? Yes. Add it as an arm on one of the two bundled tasks. A task with a different input or output shape needs its own held-out runner, which the skill explains.
+- Can I test my own AGENTS.md or CLAUDE.md? Yes. Paste its text into a new arm's `CLAUDE.md`, the file the measured agent reads, on one of the two bundled tasks. A task with a different input or output shape needs its own held-out runner, which the skill explains.
 - Which agents can run the skill? Any agent that follows SKILL.md and can use a terminal. The agent being measured in live runs is Claude Code.
 - Why did my comparison come back inconclusive? At 10 runs per arm, only large differences reach significance. Inconclusive means no difference was detected, never that the arms are the same.
 - Does it work on macOS or Windows? Not natively. It runs on Linux with Docker, so use a Linux VM or a Linux CI runner.
