@@ -5,6 +5,6 @@
   "engines": { "node": ">=22" },
   "scripts": {
     "test": "node --test",
-    "check": "node checks/no-dashes.js"
+    "check": "node checks/run.js"
   }
 }
