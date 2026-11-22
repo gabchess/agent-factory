@@ -4,7 +4,7 @@ What the Agensi upload form asks for, so a listing from `templates/listing/LISTI
 
 | Field | Limit or format |
 | --- | --- |
-| Skill archive | One ZIP, 50 MB and 1,000 files at most on the website. Agensi finds every `SKILL.md` at any depth: one makes a skill, two or more make a skill pack, which needs no `SKILL.md` at the root. Name and description are read from each frontmatter. Buyers get every `SKILL.md` plus up to 200 other text files, within 6 million characters per listing |
+| Skill archive | One ZIP, 50 MB and 1,000 files at most on the website. Agensi finds every `SKILL.md` at any depth: one makes a skill, two or more make a skill pack of at most 50 skills, which needs no `SKILL.md` at the root. Name and description are read from each frontmatter. Buyers get every `SKILL.md` plus up to 200 other text files, within 6 million characters per listing |
 | Logo | Square, 512 by 512 recommended, 5 MB at most |
 | Skill name | 60 characters at most |
 | Summary | One line, 300 characters at most |
