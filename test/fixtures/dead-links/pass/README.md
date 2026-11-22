@@ -28,3 +28,7 @@ A footnote[^1] resolves.
 [x](missing.md)
 ```
 ````
+
+[Build]: `npm test` runs every check.
+
+A [`code` label](docs/guide.md) resolves.
