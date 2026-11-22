@@ -12,12 +12,15 @@ lab/
   fixtures/good-*/     work the verifier must pass
   fixtures/bad-*/      work the verifier must fail
   experiment.json
+  experiment-smoke.json
+  experiment-pilot.json
+  notes.md             the mistake, the choices behind the verifier, anything hypothesized
   results-smoke.jsonl
   results-pilot.jsonl
   results.jsonl
 ```
 
-Keep the lab folder outside the target repository and outside every run folder. A run that can read `verify/` or `fixtures/` has seen the answer, and its result counts for nothing.
+Run every `crashlab.mjs` command from the lab folder. Keep the lab folder outside the target repository and outside every run folder. A run that can read `verify/` or `fixtures/` has seen the answer, and its result counts for nothing.
 
 ## Verifier
 
@@ -42,9 +45,9 @@ Any command that takes one folder and exits 0 for correct work, 1 for wrong work
 - `runsPerArm`: fixed before the main phase starts. Never change it after seeing results.
 - `comparisons`: exactly one with `role` `primary`. Any other role is exploratory and never supports a claim.
 - `invalidIfUnresolvedShareAbove`: the share of `unknown` and `not_run` runs above which the report is invalid. Defaults to 0.1.
-- `budget.capUsd`: the dollar cap the person approved.
+- `budget.capUsd`: the dollar cap for the whole experiment, proposed in step 6 and approved in step 7. No run starts before the approval.
 
-For smoke and pilot, copy the file with `runsPerArm` set to 1 and 2.
+For smoke and pilot, copy the file to `experiment-smoke.json` and `experiment-pilot.json` with `runsPerArm` set to 1 and 2, for their reports. `budget` always reads the cap from `experiment.json`.
 
 ## Results line
 
@@ -55,7 +58,7 @@ One JSON object per line, one line per run, appended after the verifier finishes
 ```
 
 - `arm` and `run`: the arm id and the run's index, from 0 to `runsPerArm - 1`.
-- `verdict`: `pass` or `fail` from the verifier; `unknown` when the harness errored or the verifier itself broke; `not_run` when `budget` stopped the run before it started.
-- `costUsd`: what the session cost, from the harness's usage output. Use the most a run can cost when the harness gives no figure, and say so in the summary.
+- `verdict`: `pass` or `fail` from the verifier; `fail` also when the session crashed, timed out or hit a limit; `unknown` when the harness could not start or finish the session or the verifier itself broke; `not_run` when `budget` stopped the run before it started.
+- `costUsd`: what the session cost, from the harness's usage output. Required on every line but `not_run`; a line without it is refused. Use the per-run limit when the harness gives no figure, and say so in the summary.
 - `endedNormally`: true when the session finished without an error, a timeout or a limit.
 - `reason`: the verifier's failure message, or what went wrong.

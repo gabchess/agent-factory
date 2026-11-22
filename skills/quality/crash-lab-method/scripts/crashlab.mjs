@@ -89,6 +89,7 @@ const usd = (x) => `$${x.toFixed(2)}`;
 function plan(opts) {
   const runs = positiveInt(need(opts, "runs"), "runs");
   const arms = opts.arms === undefined ? 2 : positiveInt(opts.arms, "arms");
+  if (arms < 2) fail("an experiment needs at least two arms");
   const lines = [`# Plan: ${runs} runs per arm, ${arms} arms`, "", "| Control passes | Treatment must pass at most | or at least |", "|---|---|---|"];
   for (let c = 0; c <= runs; c++) {
     let low = null;
@@ -105,8 +106,8 @@ function plan(opts) {
   let ok = true;
   if (opts["cost-per-run"] !== undefined) {
     const each = money(opts["cost-per-run"], "cost-per-run");
-    const total = each * runs * arms;
-    lines.push("", `Estimated main phase cost: ${runs * arms} runs at ${usd(each)} = ${usd(total)}.`);
+    const total = each * (runs + 3) * arms;
+    lines.push("", `Estimated cost: ${(runs + 3) * arms} runs (smoke 1, pilot 2 and main ${runs} per arm, ${arms} arms) at ${usd(each)} = ${usd(total)}.`);
     if (opts.cap !== undefined) {
       const cap = money(opts.cap, "cap");
       ok = fits(total, cap);
@@ -127,7 +128,8 @@ function rehearse(opts, command) {
   for (const c of cases) {
     const args = command.map((part) => part.replaceAll("{dir}", c.dir));
     const run = spawnSync(args[0], args.slice(1), { encoding: "utf8", timeout: 120000 });
-    const said = run.error ? `error: ${run.error.message}` : run.status === 0 ? "pass" : run.status === 1 ? "fail" : `error: ${run.signal ?? `exit ${run.status}`}`;
+    const reason = (run.stdout ?? "").trim();
+    const said = run.error ? `error: ${run.error.message}` : run.status === 0 ? "pass" : run.status !== 1 ? `error: ${run.signal ?? `exit ${run.status}`}` : reason ? "fail" : "error: exit 1 with no reason on stdout";
     const ok = said === c.expect;
     if (!ok) mismatches++;
     const firstLine = ((run.stdout ?? "").trim() || (run.stderr ?? "").trim()).split(/\r?\n/)[0];
@@ -161,7 +163,8 @@ function loadResults(path, { missingIsEmpty = false } = {}) {
     try { row = JSON.parse(line); } catch { fail(`${path}:${i + 1}: not valid JSON`); }
     if (!VERDICTS.includes(row.verdict)) fail(`${path}:${i + 1}: verdict must be one of ${VERDICTS.join(", ")}`);
     if (typeof row.arm !== "string" || !Number.isInteger(row.run)) fail(`${path}:${i + 1}: needs a string arm and a whole-number run`);
-    return { ...row, costUsd: Number(row.costUsd) || 0 };
+    if (row.verdict !== "not_run" && !(typeof row.costUsd === "number" && row.costUsd >= 0)) fail(`${path}:${i + 1}: needs costUsd, a number of dollars; use the most a run can cost when the harness gives no figure`);
+    return { ...row, costUsd: row.costUsd ?? 0 };
   });
 }
 
@@ -190,7 +193,8 @@ function report(opts) {
   const share = results.length ? unresolved / results.length : 1;
   const notes = [];
   if (missing.length || duplicated.length || unexpected.length) notes.push(`results do not match the ${expected.size}-run plan: ${missing.length} missing, ${duplicated.length} duplicated, ${unexpected.length} unexpected`);
-  if (share > exp.invalidIfUnresolvedShareAbove) notes.push(`${unresolved}/${results.length} runs unknown or not run, above the ${pct(exp.invalidIfUnresolvedShareAbove)} limit`);
+  if (results.length === 0) notes.push("the results file has no runs");
+  else if (share > exp.invalidIfUnresolvedShareAbove) notes.push(`${unresolved}/${results.length} runs unknown or not run, above the ${pct(exp.invalidIfUnresolvedShareAbove)} limit`);
   const valid = notes.length === 0;
 
   const stats = new Map(exp.arms.map((arm) => {
@@ -224,7 +228,7 @@ function report(opts) {
     const key = `${r.verdict}: ${r.reason || "no reason recorded"}`;
     groups.set(key, [...(groups.get(key) ?? []), `${r.arm}#${r.run}`]);
   }
-  const reasons = [...groups].sort((x, y) => y[1].length - x[1].length).map(([key, runs]) => `- ${runs.length} run${runs.length === 1 ? "" : "s"} ${key} (${runs.sort().join(", ")})`);
+  const reasons = [...groups].sort((x, y) => y[1].length - x[1].length).map(([key, runs]) => `- ${runs.length} run${runs.length === 1 ? "" : "s"} ${key} (${runs.sort((x, y) => x.localeCompare(y, "en", { numeric: true })).join(", ")})`);
   out.push("", "## Cost", "", `${usd(spent(results))} spent of the ${usd(exp.budget.capUsd)} cap. Compare it with the provider's usage page before the next paid run.`);
   out.push("", "## Failures", "", ...(reasons.length ? reasons : ["- none recorded"]));
   console.log(out.join("\n"));

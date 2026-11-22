@@ -43,7 +43,7 @@ The agent failed the same held-out check in 19 of the 20 runs that started next 
 
 - Verifier rehearsal: 6 of 6 fixtures matched before any paid run. Exporting through the float helper failed, with and without the comment, and so did a session that changed nothing. Fixing the helper and writing exact integer math both passed.
 - Arms: E0 float helper with no comment, E1 the same helper with the excuse comment, E2 a helper that formats with integer string math.
-- Plan: at 10 runs per arm, a 10 of 10 arm differs from another only when that one passes 5 or fewer. 30 runs at about $0.08 each fit the $5 cap.
+- Plan: at 10 runs per arm, a 10 of 10 arm differs from another only when that one passes 5 or fewer. 39 runs with smoke and pilot, at about $0.08 each, fit the $5 cap.
 
 ## Report
 
@@ -111,7 +111,7 @@ One-time, $9.
 
 - Does it spend money? Only the runs do, on your own agent or model account, and only after you name a dollar cap. Planning, verifier rehearsal and the report are free.
 - Which agents can it measure? The one you run it in, or any agent you can start headless from the terminal. Each run must be a fresh session with no memory of this conversation.
-- Is each run sandboxed? Not by the skill. Runs use your agent's normal permissions in a temporary copy of your repository. Use a container or a throwaway VM for stronger isolation.
+- Is each run sandboxed? Not by the skill. Runs use your agent's normal permissions in a temporary copy of your repository. Use a container or a throwaway VM for stronger isolation, and turn off user-level instructions, memory and skills for the runs, since they reach every arm.
 - Why did my comparison come back inconclusive? At 10 runs per arm, only large differences reach significance. Inconclusive means no difference was detected, never that the arms are the same. `plan` shows what your run count can detect before you spend anything.
 - Does it work on macOS or Windows? Yes, wherever Node.js 18 or later, git and your agent run.
 
