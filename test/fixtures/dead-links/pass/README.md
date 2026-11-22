@@ -34,3 +34,5 @@ A footnote[^1] resolves.
 A [`code` label](docs/guide.md) resolves.
 
 An [escaped hash](docs/a%23b.md) resolves.
+
+Two backslashes \\\\`[x](nowhere.md)` keep the code.
