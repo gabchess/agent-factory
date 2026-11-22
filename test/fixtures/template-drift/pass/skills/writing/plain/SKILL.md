@@ -19,6 +19,9 @@ A plain draft.
 
 ```md
 ## Fake heading inside code
+<!-- an example comment opener
 ```
 
 ## Background
+
+<!-- a note for authors -->
