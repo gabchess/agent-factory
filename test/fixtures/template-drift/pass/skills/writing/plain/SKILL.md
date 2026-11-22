@@ -11,6 +11,10 @@ license: MIT
 
 1. Write it.
 
+## Output ##
+
+A plain draft.
+
 ## Examples
 
 ```md

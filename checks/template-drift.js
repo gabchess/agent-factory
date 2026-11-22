@@ -2,9 +2,11 @@ import { frontmatter } from "./frontmatter.js";
 import { proseLines } from "./markdown.js";
 import { TEMPLATED, isA } from "./artifacts.js";
 
+const blankComments = (text) => text.replace(/<!--[^]*?-->/g, (comment) => comment.replace(/[^\n]/g, " "));
+
 const headings = (text) =>
-  proseLines(text)
-    .map(({ line, raw }) => ({ line, heading: raw.replace(/\r$/, "").trimEnd() }))
+  proseLines(blankComments(text))
+    .map(({ line, raw }) => ({ line, heading: raw.trimEnd().replace(/\s+#+$/, "") }))
     .filter(({ heading }) => /^## \S/.test(heading));
 
 function shape(text) {

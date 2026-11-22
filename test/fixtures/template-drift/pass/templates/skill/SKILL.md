@@ -6,4 +6,6 @@ description: What it is. Use when it applies.
 
 ## Steps
 
+## Output
+
 ## Background
