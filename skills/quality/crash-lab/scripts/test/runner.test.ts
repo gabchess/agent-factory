@@ -325,7 +325,8 @@ test("a failed artifact snapshot keeps the charged attempt and its verdict", asy
   assert.equal(slot.verdict, "pass");
   assert.equal(slot.attempts.length, 1);
   assert.match(slot.attempts[0].artifactError ?? "", /already exists.*workspace kept at /);
-  assert.ok(existsSync((slot.attempts[0].artifactError ?? "").split("workspace kept at ")[1]));
+  const kept = (slot.attempts[0].artifactError ?? "").match(/workspace kept at (\S+), session home kept at (\S+)$/);
+  assert.ok(kept && existsSync(kept[1]) && existsSync(kept[2]));
   assert.ok(seen.includes("main:A0:0:session") && seen.includes("main:A0:0:terminal"));
 });
 
@@ -364,9 +365,9 @@ test("a truncated attempts log line is reported, not thrown", () => {
 test("two runners recovering the same dead lock never both hold it", () => {
   const path = join(makeTempDir(), "ledger.json");
   writeFileSync(`${path}.lock`, "999999999");
-  writeFileSync(`${path}.lock.recovery`, "");
+  writeFileSync(`${path}.lock.recovery`, String(process.pid));
   assert.throws(() => BudgetLedger.open(path, 2), /locked by another runner/);
-  rmSync(`${path}.lock.recovery`);
+  writeFileSync(`${path}.lock.recovery`, "999999999");
   const first = BudgetLedger.open(path, 2);
   assert.throws(() => BudgetLedger.open(path, 2), /locked by another runner/);
   first.close();
