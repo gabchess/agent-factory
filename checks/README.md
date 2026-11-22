@@ -10,6 +10,7 @@ Support modules, shared by the checks:
 - `repo.js`: builds the snapshot a check reads, the same way for the real repo and for a fixture.
 - `markdown.js`: gives the prose lines of a Markdown file, without code blocks or inline code.
 - `lines.js`: finds every match of a pattern, line by line, with its column.
+- `links.js`: the one Markdown link grammar, inline and reference-style, with nested labels. Checks that need to know where links are use it instead of their own pattern.
 
 The checks:
 

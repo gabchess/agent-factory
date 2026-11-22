@@ -1,7 +1,7 @@
 import { posix } from "node:path";
+import { INLINE_LINK } from "./links.js";
 import { isMarkdown, proseLines } from "./markdown.js";
 
-const INLINE = /\[(?<label>(?:[^[\]]|\[[^\]]*\])*)\]\(\s*(?:<(?<angle>[^>]+)>|(?<bare>(?:[^()\s]|\([^()\s]*\))+))(?:\s+[^)]*)?\)/dg;
 const REFERENCE = /^ {0,3}\[(?!\^)[^\]]+\]:\s*(?:<(?<angle>[^>]+)>|(?<bare>\S+))/dg;
 const EXTERNAL = /^([a-z][a-z0-9+.-]*:|#|\/\/)/i;
 
@@ -32,7 +32,7 @@ function link(match, raw, offset) {
 }
 
 function links(prose, raw, offset = 0) {
-  const inline = [...prose.matchAll(INLINE)].flatMap((match) => [
+  const inline = [...prose.matchAll(INLINE_LINK)].flatMap((match) => [
     link(match, raw, offset),
     ...links(match.groups.label, raw, offset + match.indices.groups.label[0]),
   ]);

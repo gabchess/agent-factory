@@ -16,3 +16,5 @@ README.md explains the layout.
 Write each pointer like `read [guide][g]`, after its condition.
 - When you configure, read [read config.md first](GLOSSARY.md).
 - When you edit, see [read missing.md](GLOSSARY.md).
+- When you edit, see [guide][read missing.md].
+- When you edit, see [read `lost.md` [details]](README.md).

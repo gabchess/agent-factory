@@ -1,9 +1,9 @@
 import { posix } from "node:path";
+import { linkSpans, maskSpans } from "./links.js";
 import { proseLines } from "./markdown.js";
 
 const READ = /\bread\s+/gi;
-const TARGET = /`([^`]+)`|\[[^\]]*\](?:\([^)]*\)|\[[^\]]*\])|([\w./-]+\.md)\b/y;
-const LINK_LABEL = /\[[^\]]*\](?=[(\[])/g;
+const TARGET = /`([^`]+)`|([\w./-]+\.md)\b/y;
 const WHEN = /^\s*(?:[-*+]\s+|\d+\.\s+)?when\b/i;
 const CONTINUATION = /^\s+(?![-*+]\s|\d+\.\s)\S/;
 const resolves = (folder, target, contains) =>
@@ -23,15 +23,14 @@ function withItemStart(lines) {
 }
 
 function pointers(raw, prose) {
-  let end = 0;
-  const scan = prose.replace(LINK_LABEL, (label) => "x".repeat(label.length));
-  return [...scan.matchAll(READ)].flatMap((read) => {
-    if (read.index < end) return [];
-    TARGET.lastIndex = read.index + read[0].length;
+  const links = linkSpans(prose);
+  return [...maskSpans(prose, links).matchAll(READ)].flatMap((read) => {
+    const at = read.index + read[0].length;
+    const column = read.index + 1;
+    if (links.some(({ start }) => start === at)) return [{ column }];
+    TARGET.lastIndex = at;
     const match = TARGET.exec(raw);
-    if (!match) return [];
-    end = TARGET.lastIndex;
-    return [{ column: read.index + 1, target: match[1] ?? match[2] }];
+    return match ? [{ column, target: match[1] ?? match[2] }] : [];
   });
 }
 
