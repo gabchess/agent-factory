@@ -23,7 +23,7 @@ Before any money is spent, the skill makes your agent prove the verifier: every 
 
 You get a Markdown report with pass rates and 95% Wilson intervals, a Fisher exact test on one comparison chosen before the runs, the total cost against your cap, every failure grouped by reason, and a proposed decision for the instruction (keep, shorten, move into code, repair or remove). It says "inconclusive" when the data cannot tell, and never calls that equivalence.
 
-"Dead" means what the numbers allow: no measurable effect at the number of runs you paid for. The report calls that inconclusive, and `plan` shows before you spend anything how large a difference your run count can catch. When a rule lowers the pass rate by more than that, the report shows it as a measured difference, and the same holds for a rename or a check that does the rule's job better.
+"Dead" means what the numbers allow: no measurable effect at the number of runs you paid for. The report calls that inconclusive, and `plan` shows before you spend anything which pass counts reach significance at your run count. When the arms split that far apart, the report shows a measured difference, whether the rule helped, hurt, or a rename or a check did its job better. A rule also has to reach the agent to count: put it in a file your harness loads at the start of a session, because a rule in a file it never reads looks just as dead.
 
 The numbers come from one dependency-free Node.js script. It works with any agent that can start a fresh session of itself, such as a headless CLI or a subagent with a fresh context. It does not sandbox those sessions: they run with your agent's usual permissions, so use a container or a throwaway VM if you have one.
 
@@ -114,7 +114,7 @@ One-time, $9.
 - Does it spend money? Only the runs do, on your own agent or model account, and only after you name a dollar cap. Planning, verifier rehearsal and the report are free.
 - Which agents can it measure? The one you run it in, or any agent you can start headless from the terminal. Each run must be a fresh session with no memory of this conversation.
 - Is each run sandboxed? Not by the skill. Runs use your agent's normal permissions in a temporary copy of your repository. Use a container or a throwaway VM for stronger isolation, and turn off user-level instructions, memory and skills for the runs, since they reach every arm.
-- What counts as a dead rule? One whose arm shows no measurable difference from the arm without it, at the runs you paid for. That result is inconclusive, not proof that the rule does nothing: more runs can still find an effect.
+- What counts as a dead rule? One whose arm shows no measurable difference from the arm without it, at the runs you paid for. That result is inconclusive, not proof that the rule does nothing: more runs can still find an effect. Check first that your harness loads the file the rule is in: Claude Code, for one, does not read `AGENTS.md` and loads a nested `CLAUDE.md` only on demand.
 - Why did my comparison come back inconclusive? At 10 runs per arm, only large differences reach significance. Inconclusive means no difference was detected, never that the arms are the same. `plan` shows what your run count can detect before you spend anything.
 - Does it work on macOS or Windows? Yes, wherever Node.js 18 or later, git and your agent run.
 
