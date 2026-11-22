@@ -155,7 +155,7 @@ export async function runPhase(opts: {
         try {
           record.artifact = snapshotWorkspace(ws.dir, opts.artifactDir, `${slot.key.replace(/:/g, "_")}_attempt${attempt}`);
         } catch (err) {
-          record.artifactError = `${(err as Error).message}; workspace kept at ${ws.dir}`;
+          record.artifactError = `${(err as Error).message}; workspace kept at ${ws.dir}, session home kept at ${home}`;
         }
       }
       result.attempts.push(record);
