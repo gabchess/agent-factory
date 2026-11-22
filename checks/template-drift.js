@@ -7,7 +7,7 @@ const TRAILING_COMMENT = /\s*<!--(?:(?!<!--).)*-->$/;
 function headingText(raw) {
   let heading = raw.trim();
   while (TRAILING_COMMENT.test(heading)) heading = heading.replace(TRAILING_COMMENT, "");
-  return heading.replace(/\s+#+$/, "");
+  return heading.replace(/^(#+)\s+/, "$1 ").replace(/\s+#+$/, "");
 }
 
 const headings = (text) =>
