@@ -4,6 +4,8 @@ import { proseLines } from "./markdown.js";
 const POINTER = /\bread\s+(?:`([^`]+)`|\[[^\]]*\]\([^)]*\)|([\w./-]+\.md)\b)/gi;
 const WHEN = /^\s*(?:[-*+]\s+|\d+\.\s+)?when\b/i;
 const CONTINUATION = /^\s+(?![-*+]\s|\d+\.\s)\S/;
+const resolves = (folder, target, contains) =>
+  [target, target.replace(/[?#].*$/, "")].some((path) => contains(posix.join(folder, path)));
 const isAgentsFile = (path) => posix.basename(path) === "AGENTS.md";
 
 const deadPointer = (path) =>
@@ -23,9 +25,9 @@ function pointerFailures({ path, text }, contains) {
   return withItemStart(proseLines(text)).flatMap(({ line, raw, start }) =>
     [...raw.matchAll(POINTER)].flatMap((match) => {
       const column = match.index + 1;
-      const target = (match[1] ?? match[2])?.replace(/[?#].*$/, "");
+      const target = match[1] ?? match[2];
       return [
-        ...(target && !contains(posix.join(folder, target)) ? [{ path, line, column, message: deadPointer(target) }] : []),
+        ...(target && !resolves(folder, target, contains) ? [{ path, line, column, message: deadPointer(target) }] : []),
         ...(WHEN.test(start) ? [] : [{ path, line, column, message: NO_CONDITION }]),
       ];
     }),

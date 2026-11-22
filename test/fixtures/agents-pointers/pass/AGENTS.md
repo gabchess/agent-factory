@@ -11,3 +11,4 @@ README.md explains the layout.
 - When you add a check or change one,
   read `checks/README.md`.
 - When you add a check, read `checks/README.md#adding`.
+- When you write C#, read `docs/C#.md`.
