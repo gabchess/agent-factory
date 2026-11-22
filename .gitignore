@@ -1,1 +1,6 @@
 node_modules/
+
+# Crash Lab moved to gabchess/skills. Keep run output from an older checkout out of commits.
+skills/quality/crash-lab/scripts/.out/
+skills/quality/crash-lab/scripts/results/
+skills/quality/crash-lab/scripts/ledgers/
