@@ -1,0 +1,30 @@
+name: agentic-dead-rules-detector
+
+on:
+  pull_request:
+    paths: ["skills/quality/agentic-dead-rules-detector/**", ".github/workflows/agentic-dead-rules-detector.yml"]
+  push:
+    branches: [main]
+    paths: ["skills/quality/agentic-dead-rules-detector/**", ".github/workflows/agentic-dead-rules-detector.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  script:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        node: [18, 22]
+    defaults:
+      run:
+        working-directory: skills/quality/agentic-dead-rules-detector
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: node --test test/dead-rules.test.mjs
+      - name: Script stays under the Agensi 20 KB guideline
+        run: test "$(wc -c < scripts/dead-rules.mjs)" -lt 20000
