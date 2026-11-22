@@ -1,4 +1,5 @@
 import { posix } from "node:path";
+import { isAgentsFile } from "./artifacts.js";
 import { linkSpans, maskSpans } from "./links.js";
 import { proseLines } from "./markdown.js";
 
@@ -8,7 +9,6 @@ const WHEN = /^\s*(?:[-*+]\s+|\d+\.\s+)?when\b/i;
 const CONTINUATION = /^\s+(?![-*+]\s|\d+\.\s)\S/;
 const resolves = (folder, target, contains) =>
   [target, target.replace(/[?#].*$/, "")].some((path) => contains(posix.join(folder, path)));
-const isAgentsFile = (path) => posix.basename(path) === "AGENTS.md";
 
 const deadPointer = (path) =>
   `pointer to \`${path}\`, which does not exist. Fix the path, relative to this AGENTS.md, or remove the pointer.`;
@@ -45,4 +45,4 @@ function pointerFailures({ path, text }, contains) {
 }
 
 export const check = ({ files, contains }) =>
-  files.filter(({ path }) => isAgentsFile(path)).flatMap((file) => pointerFailures(file, contains));
+  files.filter(isAgentsFile).flatMap((file) => pointerFailures(file, contains));
