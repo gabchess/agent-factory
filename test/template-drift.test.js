@@ -27,6 +27,7 @@ test("an artifact that drifts from its template fails with the fix", () => {
     { path: "skills/a/no-description/SKILL.md", line: 1, message: key("description", skill) },
     { path: "skills/a/no-frontmatter/SKILL.md", line: 1, message: key("name", skill) },
     { path: "skills/a/no-frontmatter/SKILL.md", line: 1, message: key("description", skill) },
+    { path: "skills/a/null-description/SKILL.md", line: 3, message: `frontmatter key "description" is empty. Fill it in the way ${skill} shows.` },
     {
       path: "skills/a/out-of-order/SKILL.md",
       line: 5,
