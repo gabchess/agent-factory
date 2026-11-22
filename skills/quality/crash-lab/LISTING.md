@@ -2,7 +2,7 @@
 
 ## Package
 
-- Status: local install only. Agensi does not run this package yet: it delivers skills as text over MCP and runs each script alone from a temporary file, so the lab's 32 TypeScript modules, npm install, Docker build context and git tree cannot work there. See `data/marketplaces/agensi.md`. Do not upload until an Agensi format passes the checks listed there.
+- Status: local install only. Agensi does not run this package yet: it delivers skills as text over MCP and runs each script alone from a temporary file, so the lab's 32 TypeScript modules, npm install, Docker build context and git tree cannot work there. See `data/marketplaces/agensi.md`. Upload `skills/quality/crash-lab-method` to Agensi instead.
 - Build the archive from a commit: `git archive --format=zip -o crash-lab.zip HEAD:skills/quality/crash-lab SKILL.md references scripts`. It holds `SKILL.md` at its root, plus `references/` and `scripts/`. This file and `media/` stay out.
 - The marketplace reads the name and description from the frontmatter, so those come from the skill unchanged.
 - Agensi hosted tools: none. Live runs call the Anthropic API with the buyer's own key.
