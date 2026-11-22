@@ -235,7 +235,7 @@ function report(opts) {
     groups.set(key, [...(groups.get(key) ?? []), `${r.arm}#${r.run}`]);
   }
   const reasons = [...groups].sort((x, y) => y[1].length - x[1].length).map(([key, runs]) => `- ${runs.length} run${runs.length === 1 ? "" : "s"} ${key} (${runs.sort((x, y) => x.localeCompare(y, "en", { numeric: true })).join(", ")})`);
-  out.push("", "## Cost", "", `${usd(spent(results))} for the runs in this file. Smoke and pilot are not in it: \`budget\` with every phase's results gives the total against the ${usd(exp.budget.capUsd)} cap. Compare it with the provider's usage page before the next paid run.`);
+  out.push("", "## Cost", "", `${usd(spent(results))} for the runs in this file. \`budget\` with every phase's results file gives the experiment total against the ${usd(exp.budget.capUsd)} cap. Compare it with the provider's usage page before the next paid run.`);
   out.push("", "## Failures", "", ...(reasons.length ? reasons : ["- none recorded"]));
   console.log(out.join("\n"));
   return valid ? 0 : 1;
