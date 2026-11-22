@@ -3,6 +3,7 @@ import { proseLines } from "./markdown.js";
 
 const READ = /\bread\s+/gi;
 const TARGET = /`([^`]+)`|\[[^\]]*\](?:\([^)]*\)|\[[^\]]*\])|([\w./-]+\.md)\b/y;
+const LINK_LABEL = /\[[^\]]*\](?=[(\[])/g;
 const WHEN = /^\s*(?:[-*+]\s+|\d+\.\s+)?when\b/i;
 const CONTINUATION = /^\s+(?![-*+]\s|\d+\.\s)\S/;
 const resolves = (folder, target, contains) =>
@@ -23,7 +24,7 @@ function withItemStart(lines) {
 
 function pointers(raw, prose) {
   let end = 0;
-  const scan = prose.replace(/\[[^\]]*\]/g, (label) => "x".repeat(label.length));
+  const scan = prose.replace(LINK_LABEL, (label) => "x".repeat(label.length));
   return [...scan.matchAll(READ)].flatMap((read) => {
     if (read.index < end) return [];
     TARGET.lastIndex = read.index + read[0].length;

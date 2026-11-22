@@ -7,3 +7,4 @@
 - Read [guide][g] first.
 - When you quote `read ` here, read `nope.md`.
 - When you type \`, read `gone.md`.
+- When editing, [read `lost.md`].
