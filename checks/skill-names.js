@@ -1,18 +1,13 @@
 import { posix } from "node:path";
+import { frontmatter } from "./frontmatter.js";
 
 const isSkill = (path) => path.startsWith("skills/") && posix.basename(path) === "SKILL.md";
 
-const QUOTED = /^(["'])(.*?)\1(?:\s+#.*)?$/;
-const unquote = (name) => (QUOTED.test(name) ? name.replace(QUOTED, "$2") : name.replace(/\s+#.*$/, ""));
 const key = (name) => name.toLowerCase();
 
 function frontmatterName(text) {
-  const lines = text.split(/\r?\n/);
-  if (lines[0] !== "---") return null;
-  const end = lines.indexOf("---", 1);
-  if (end === -1) return null;
-  const index = lines.slice(1, end).findIndex((line) => /^name:\s*\S/.test(line));
-  return index === -1 ? null : { name: unquote(lines[index + 1].replace(/^name:\s*/, "").trim()), line: index + 2 };
+  const name = frontmatter(text)?.get("name");
+  return name?.value ? { name: name.value, line: name.line } : null;
 }
 
 function linkNames({ path, text }) {

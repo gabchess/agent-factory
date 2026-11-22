@@ -1,0 +1,5 @@
+# Decision title
+
+## Why
+
+## Evidence

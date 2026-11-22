@@ -5,6 +5,7 @@
   "engines": { "node": ">=22" },
   "scripts": {
     "test": "node --test \"test/**/*.test.js\"",
-    "check": "node checks/run.js"
+    "check": "node checks/run.js",
+    "snapshot": "node checks/write-snapshot.js"
   }
 }
