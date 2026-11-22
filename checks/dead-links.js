@@ -1,7 +1,7 @@
 import { posix } from "node:path";
 import { isMarkdown, proseLines } from "./markdown.js";
 
-const INLINE = /\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+[^)]*)?\)/g;
+const INLINE = /\[[^\]]*\]\(\s*(?:<([^>]+)>|([^)\s]+))(?:\s+[^)]*)?\)/g;
 const REFERENCE = /^ {0,3}\[[^\]]+\]:\s*<?([^\s>]+)>?/g;
 const EXTERNAL = /^([a-z][a-z0-9+.-]*:|#)/i;
 
@@ -25,7 +25,7 @@ const exists = (path, contains) => path !== null && (path === "." || (!outsideRe
 
 const links = (prose) =>
   [INLINE, REFERENCE].flatMap((pattern) =>
-    [...prose.matchAll(pattern)].map((match) => ({ target: match[1], column: match.index + match[0].indexOf("[") + 1 })),
+    [...prose.matchAll(pattern)].map((match) => ({ target: match[1] ?? match[2], column: match.index + match[0].indexOf("[") + 1 })),
   );
 
 function deadLinks({ path, text }, contains) {

@@ -22,6 +22,18 @@ test("a dead pointer and a pointer without a when condition each fail with the f
       message: 'pointer without a condition. Start the line with when to read it: "When you X, read Y".',
     },
     {
+      path: "AGENTS.md",
+      line: 5,
+      column: 10,
+      message: 'pointer without a condition. Start the line with when to read it: "When you X, read Y".',
+    },
+    {
+      path: "AGENTS.md",
+      line: 6,
+      column: 18,
+      message: "pointer to `PLAN.md`, which does not exist. Fix the path, relative to this AGENTS.md, or remove the pointer.",
+    },
+    {
       path: "docs/AGENTS.md",
       line: 1,
       column: 24,

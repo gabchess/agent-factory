@@ -6,3 +6,7 @@ npm run check -- --flag
 ```
 
 Code like `a - b` stays fine.
+
+| Check | Column |
+| --- | --- |
+| adr-length | - |

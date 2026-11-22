@@ -11,3 +11,5 @@ Code is not a link: `[x](missing.md)`.
 ```
 
 [guide]: docs/guide.md
+
+A path with a space resolves: [spaced](<docs/my guide.md>).

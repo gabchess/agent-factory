@@ -9,7 +9,7 @@ const findings = (lines, pattern, name) =>
 
 function findDashes({ path, text }) {
   const unicode = findings(textLines(text), /[\u2014\u2013]/g, (match) => DASHES[match[0]]);
-  const hyphens = isMarkdown(path) ? findings(proseLines(text), /(?<=\S )-{1,2}(?= \S)/g, () => "hyphen used as a dash") : [];
+  const hyphens = isMarkdown(path) ? findings(proseLines(text), /(?<=[^\s|] )-{1,2}(?= [^\s|])/g, () => "hyphen used as a dash") : [];
   return [...unicode, ...hyphens]
     .sort((a, b) => a.line - b.line || a.column - b.column)
     .map((finding) => ({ path, ...finding }));
