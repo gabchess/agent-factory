@@ -14,17 +14,15 @@
 
 ## Description
 
-Every team edits its `AGENTS.md`, `CLAUDE.md` and skills by reading them. Nobody knows which lines carry weight. A rewrite that reads better can drop the one rule that kept the agent from a bug, and the agent will still tell you it succeeded.
+Most changes to `AGENTS.md`, `CLAUDE.md` or a skill are reviewed by reading the diff, which cannot show which lines change what the agent does. A rewrite that reads better can drop the one rule that kept the agent from a bug, and the agent will still report success.
 
-Crash Lab measures it instead. It builds controlled variants ("arms") of one coding task that differ by a single change, such as a deleted instruction line, a rewrite or a renamed field. Each run is a fresh agent session in its own Docker sandbox with only the model API reachable. When a session ends, a verifier the agent never saw runs the produced code on held-out inputs, runs the agent's own tests with skips and todos counted as failures, and fails any run that touched a protected file. The agent's claim of success is recorded next to the verdict, never in place of it.
+Crash Lab runs the agent instead. It builds controlled variants ("arms") of one coding task that differ by a single change, such as a deleted instruction line, a rewrite or a renamed field. Each run is a fresh agent session in its own Docker sandbox with only the model API reachable. When a session ends, a verifier the agent never saw runs the produced code on held-out inputs, runs the agent's own tests with skips and todos counted as failures, and fails any run that touched a protected file. The agent's own report of success is logged beside the verdict and does not count toward it.
 
 Before any money is spent, the skill makes the agent prove the verifier: every known-bad fixture, built from a real past mistake or a tampering trick, has to fail for the stated reason. Live runs need a spend cap you approve, and the runner reserves each attempt's cost before starting it.
 
 You get a Markdown report with pass rates and 95% Wilson intervals, a Fisher exact test on one pre-registered comparison, the cost the harness reported next to the cost the lab charged, every failure reason, and a proposed decision for the instruction (keep, shorten, move into code, repair or remove). It says "inconclusive" when the data cannot tell, and never calls that equivalence.
 
 Two cases ship with it. `legacy-cents` tests whether a "minor units" instruction line is load-bearing. `excuse-contagion` tests whether a "fine for now" comment on a float helper spreads the hack into new code. Add your own instruction file as a new arm to measure it on either task.
-
-For teams who maintain agent instructions and want evidence, not opinions, before they merge a change.
 
 ## Demo
 
@@ -36,7 +34,7 @@ Our money code has a float helper with a comment saying "Floating-point division
 
 ## Summary
 
-The agent failed the same held-out check in 19 of the 20 runs that started next to the float helper, with or without the comment, and claimed success in all 19. Fixing the helper made every run pass. The comment's own effect is inconclusive at 10 runs per arm. The helper's code is the problem, so fix the code.
+The agent failed the same held-out check in 19 of the 20 runs that started next to the float helper, with or without the comment, and claimed success in all 19. Fixing the helper made every run pass. The comment's own effect is inconclusive at 10 runs per arm.
 
 ## Setup
 
@@ -84,7 +82,7 @@ The agent failed the same held-out check in 19 of the 20 runs that started next 
 
 **Next steps**
 
-- Replace the float helper with integer math as shown, and delete the comment. In this run the helper's code decided the outcome.
+- Replace the float helper with integer math as shown, and delete the comment.
 - Open an issue for every other "for now" comment, so the hack behind it gets fixed.
 - Rerun at 30 runs per arm if you still want a claim about comments alone.
 

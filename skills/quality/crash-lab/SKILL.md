@@ -5,7 +5,7 @@ description: Tests whether a change to a coding agent's instructions (AGENTS.md,
 
 # Crash Lab
 
-Runs the same coding task against variants ("arms") of an agent's starting instructions, then lets checks the agent never saw decide which arms produced correct code. The rule that matters most: no paid run starts until the verifier has failed every known-bad fixture for the right reason and the person has approved a spend cap.
+Runs the same coding task against variants ("arms") of an agent's starting instructions, then lets checks the agent never saw decide which arms produced correct code. No paid run starts until the verifier has failed every known-bad fixture for the right reason and the person has approved a spend cap.
 
 Run every command below from this skill's `scripts/` folder. The bundled task is a partner order export with an ambiguous `amount` field, chosen because agents get it wrong in ways a test can catch. A new arm can carry any instruction file, so the person's own AGENTS.md or CLAUDE.md can be measured against it. A task of a different shape needs a new held-out runner (see Background).
 
@@ -42,7 +42,7 @@ Read this only when a step is unclear or its rule is questioned.
 - Why fixtures come first: Ray Fernando's rule for agent-made checks is to "prove each check catches a real past mistake before you trust it", after Lauren Tan's warning that a check "could be proving false is true". Step 6 is that rule.
 - Why step 4 exists: the same post orders the fixes as architecture, then types, then a lint whose error names the fix, then a test. An instruction is the weakest of these, so test it only when the stronger ones do not fit.
 - Why excuse comments matter: Matt Pocock's comment triage and poteto's `no-comments` skill treat "for now" comments as permission for hacks. The bundled `excuse-contagion` case measured it: in 19 of 20 runs next to a float helper the agent claimed success and the held-out check failed.
-- Why the verifier checks more than the final output: a pass needs exact held-out results, passing repository tests with none skipped or todo, and no protected file changed. A screen or exit code that looks right is not evidence; demonstrated behavior is.
+- Why the verifier checks more than the final output: a pass needs exact held-out results, passing repository tests with none skipped or todo, and no protected file changed, so output that only looks right still fails.
 - Why charged and reported cost differ: the harness's own cost figure ran below the provider's bill, so the lab charges the larger of the reported cost and its own token pricing.
 - When you write a case or an arm, read `references/case-format.md`.
 - When you read a report, plan N, or explain a verdict, read `references/evidence-rules.md`.
