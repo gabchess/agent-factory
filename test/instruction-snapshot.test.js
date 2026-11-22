@@ -31,6 +31,7 @@ test("a snapshot checked out with CRLF line endings still matches", () => {
 test("a nested CLAUDE.md is part of what an agent loads", () => {
   const text = render(repoOf({ "AGENTS.md": "# root\n", "skills/CLAUDE.md": "Skill folder rule.\n" }));
   assert.match(text, /## skills\/CLAUDE\.md\n\nSkill folder rule\./);
+  assert.match(render(repoOf({ "CLAUDE.md": "    @AGENTS.md\n" })), /## CLAUDE\.md\n\n {4}@AGENTS\.md\n/);
 });
 
 test("a missing snapshot fails, and a repo with nothing an agent loads needs none", () => {

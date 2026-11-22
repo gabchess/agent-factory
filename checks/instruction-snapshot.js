@@ -29,7 +29,7 @@ export function render({ files }) {
   return [
     ...HEADER,
     "",
-    ...instructionFiles.flatMap(({ path, text }) => section(path, [text.replace(/\r\n/g, "\n").trim()])),
+    ...instructionFiles.flatMap(({ path, text }) => section(path, [text.replace(/\r\n/g, "\n").replace(/^\n+/, "").trimEnd()])),
     ...section("Skills", listing(skills)),
     ...section("Tools", listing(contracts)),
   ].join("\n").trimEnd() + "\n";
