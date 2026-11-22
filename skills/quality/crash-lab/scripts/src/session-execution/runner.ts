@@ -127,8 +127,16 @@ export async function runPhase(opts: {
         if (result.attempts.length > 0) result.verdict = "unknown";
         return;
       }
-      const ws = buildArm(caseSpec, slot.arm);
-      const home = makeTempDir("home-");
+      let ws: ReturnType<typeof buildArm>;
+      let home: string;
+      try {
+        ws = buildArm(caseSpec, slot.arm);
+        home = makeTempDir("home-");
+      } catch (err) {
+        stop = `workspace setup failed: ${(err as Error).message}`;
+        release();
+        throw err;
+      }
       const outcome = await safeRun(adapter, {
         workdir: ws.dir,
         home,
@@ -208,7 +216,9 @@ export async function runPhase(opts: {
       return;
     }
   };
-  await Promise.all(Array.from({ length: Math.max(1, opts.concurrency ?? 1) }, worker));
+  const settledWorkers = await Promise.allSettled(Array.from({ length: Math.max(1, opts.concurrency ?? 1) }, worker));
+  const failed = settledWorkers.find((w): w is PromiseRejectedResult => w.status === "rejected");
+  if (failed) throw failed.reason;
   return results;
 }
 
