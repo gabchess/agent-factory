@@ -11,7 +11,7 @@ test("each em dash, en dash and spaced hyphen in prose is reported with its line
   const failures = check(fixture("no-dashes", "fail"));
   assert.deepEqual(
     failures.map(({ path, line, column }) => [path, line, column]),
-    [["dashed.md", 2, 25], ["dashed.md", 3, 28], ["dashed.md", 4, 34]],
+    [["dashed.md", 2, 25], ["dashed.md", 3, 28], ["dashed.md", 4, 34], ["dashed.md", 5, 16]],
   );
   assert.match(failures[0].message, /^em dash\. Rewrite the sentence with a comma, colon, period or parentheses/);
   assert.match(failures[2].message, /^hyphen used as a dash\. Rewrite/);
