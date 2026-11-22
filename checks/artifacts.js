@@ -5,9 +5,8 @@ export const AGENT = { name: "agent", template: "templates/agent/AGENT.md", patt
 export const ADR = { name: "ADR", template: "templates/adr/0000-title.md", pattern: /^decisions\/(?!0000)\d{4}-[^/]+\.md$/ };
 export const MCP_CONTRACT = { name: "MCP contract", template: "templates/mcp-contract/CONTRACT.md", pattern: /^tools\/.+\/CONTRACT\.md$/ };
 
-export const LISTING = { name: "listing", template: "templates/listing/LISTING.md", pattern: /^skills\/.+\/LISTING\.md$/ };
 
-export const TEMPLATED = [SKILL, AGENT, ADR, MCP_CONTRACT, LISTING];
+export const TEMPLATED = [SKILL, AGENT, ADR, MCP_CONTRACT];
 
 export const isA = (kind) => ({ path }) => kind.pattern.test(path);
 export const isAgentsFile = ({ path }) => posix.basename(path) === "AGENTS.md";

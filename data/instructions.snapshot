@@ -18,25 +18,16 @@ Orchestrator → control the flow → structure outputs → execute actions → 
 - When you meet a term you do not know, or name a new concept, read `GLOSSARY.md`.
 - When you add a file to a top-level folder, read that folder's `README.md`.
 - When you add or change a check, read `checks/README.md`.
-- When you create a skill, agent, ADR, MCP contract, lane brief, handover or listing, read `templates/README.md`.
+- When you create a skill, agent, ADR, MCP contract, lane brief or handover, read `templates/README.md`.
 - When you change an `AGENTS.md`, a skill or a tool contract, read `data/README.md` to regenerate the instruction snapshot.
 
 ## CLAUDE.md
 
 @AGENTS.md
 
-## skills/quality/crash-lab/scripts/cases/excuse-contagion/base/CLAUDE.md
-
-# CLAUDE.md
-
-- Node.js standard library only, TypeScript run by Node type stripping: erasable syntax only, local imports with `.ts`.
-- Read raw partner feed fields only in `src/legacy/decoder.ts`.
-- Tests use `node:test` in `test/*.test.ts`; run `npm test` and never skip or delete tests.
-
 ## Skills
 
-- agentic-dead-rules-detector: Tests whether a rule in a coding agent's instructions (AGENTS.md, CLAUDE.md, a skill or a rule file) changes what the agent does, helps it, quietly breaks it or has no measurable effect, by running each variant of one task in fresh sessions of the agent you already use and letting a check the agent never saw judge the result. Use when someone wants evidence before trimming, rewriting or adding an instruction, wants to know which rules are dead weight, or when an agent keeps repeating a mistake and they want to know whether a rule, a rename or a check fixes it, without installing the full Crash Lab. (skills/quality/agentic-dead-rules-detector/SKILL.md)
-- crash-lab: Tests whether a change to a coding agent's instructions (AGENTS.md, CLAUDE.md, a skill or a rule) makes its work better or quietly breaks it, by running controlled variants of one task in fresh sandboxed sessions and letting held-out checks judge the code. Use when someone wants evidence before trimming, rewriting or adding an instruction, or when an agent keeps repeating a mistake and they want to know whether a rule, a rename or a check fixes it. (skills/quality/crash-lab/SKILL.md)
+- none
 
 ## Tools
 

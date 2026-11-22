@@ -1,1 +1,0 @@
-{ "arm": "A0", "extends": ["_common"], "description": "Wrong: Math.trunc drops the sign of refunds under one unit.", "expect": { "verdict": "fail", "reasonIncludes": ["H-06 (small-refund) expected USD,-0.05, got USD,0.05"] } }

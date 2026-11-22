@@ -1,1 +1,0 @@
-{ "arm": "A0", "extends": ["_common"], "description": "Wrong: locale formatting adds thousands separators.", "expect": { "verdict": "fail", "reasonIncludes": ["H-08 (huge)"] } }

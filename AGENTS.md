@@ -12,5 +12,5 @@ Orchestrator → control the flow → structure outputs → execute actions → 
 - When you meet a term you do not know, or name a new concept, read `GLOSSARY.md`.
 - When you add a file to a top-level folder, read that folder's `README.md`.
 - When you add or change a check, read `checks/README.md`.
-- When you create a skill, agent, ADR, MCP contract, lane brief, handover or listing, read `templates/README.md`.
+- When you create a skill, agent, ADR, MCP contract, lane brief or handover, read `templates/README.md`.
 - When you change an `AGENTS.md`, a skill or a tool contract, read `data/README.md` to regenerate the instruction snapshot.

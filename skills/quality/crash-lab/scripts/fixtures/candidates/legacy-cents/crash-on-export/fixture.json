@@ -1,1 +1,0 @@
-{ "arm": "A0", "extends": ["_common"], "description": "Export throws at runtime.", "expect": { "verdict": "fail", "reasonIncludes": ["held-out: export exited with 1", "held-out: wrong or missing CSV header"] } }

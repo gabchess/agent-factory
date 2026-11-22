@@ -1,3 +1,7 @@
 # skills
 
-Skills grouped by outcome, such as `pipelines/`, `disciplines/`, `reviews/`, `platforms/` and `utilities/`. Harnesses look one level deep, so each skill is linked flat into `~/.claude/skills` and `~/.agents/skills`. Two skills never share a name.
+Skills live in [gabchess/skills](https://github.com/gabchess/skills), grouped by outcome. Add new ones there.
+
+To install them, run `npx skills@latest add gabchess/skills`, or clone it and run its `scripts/link-skills.sh`. Run that script again after pulling this change: links made from this repo to `crash-lab` and `agentic-dead-rules-detector` now point at deleted folders.
+
+This repo keeps only the template every skill starts from: [`templates/skill/`](../templates/skill/). The skills repo copies it and its CI fails when the copy drifts from this one.
