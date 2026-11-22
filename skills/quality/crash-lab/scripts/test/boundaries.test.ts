@@ -60,7 +60,7 @@ test("imports are followed through imported files and keep their parent's condit
   writeFileSync(join(repo, "nested", "CLAUDE.md"), "@guide.md\n");
   writeFileSync(join(repo, "nested", "guide.md"), "rules\n");
   const imports = inventoryClaudeCode(repo).sources.filter((s) => s.kind === "import");
-  assert.deepEqual(imports.map((s) => [s.path, s.shouldApply]), [["a.md", "yes"], ["nested/guide.md", "on-demand"], ["b.md", "yes"]]);
+  assert.deepEqual(imports.map((s) => [s.path, s.shouldApply]), [["a.md", "yes"], ["b.md", "yes"], ["nested/guide.md", "on-demand"]]);
 });
 
 test("git ignores an inherited repository location", () => {
@@ -79,4 +79,15 @@ test("git ignores an inherited repository location", () => {
   }
   assert.ok(existsSync(join(dir, ".git")));
   assert.notEqual(runProcess("git", ["-C", outer, "rev-parse", "HEAD"]).code, 0);
+});
+
+test("a nested CLAUDE.md imported by the root loads at startup, and a directory reference is not an import file", () => {
+  const repo = makeTempDir();
+  mkdirSync(join(repo, "nested"));
+  mkdirSync(join(repo, "docs"));
+  writeFileSync(join(repo, "CLAUDE.md"), "@nested/CLAUDE.md and @docs\n");
+  writeFileSync(join(repo, "nested", "CLAUDE.md"), "@guide.md\n");
+  writeFileSync(join(repo, "nested", "guide.md"), "rules\n");
+  const imports = inventoryClaudeCode(repo).sources.filter((s) => s.kind === "import");
+  assert.deepEqual(imports.map((s) => [s.path, s.found, s.shouldApply]), [["nested/CLAUDE.md", true, "yes"], ["docs", false, "no"], ["nested/guide.md", true, "yes"]]);
 });

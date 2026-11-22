@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, normalize } from "node:path";
 import { listFiles } from "../util/fs.ts";
 import { DEMO_RULESET, type ApplyRule, type ClaudeCodeRuleset } from "./claude-code-rules.ts";
@@ -24,6 +24,10 @@ export interface Inventory {
 
 const MAX_IMPORT_HOPS = 4;
 
+function isFile(path: string): boolean {
+  return existsSync(path) && statSync(path).isFile();
+}
+
 export function inventoryClaudeCode(repoDir: string, opts: { home?: string; ruleset?: ClaudeCodeRuleset } = {}): Inventory {
   const rules = opts.ruleset ?? DEMO_RULESET;
   const sources: InstructionSource[] = [];
@@ -48,22 +52,32 @@ export function inventoryClaudeCode(repoDir: string, opts: { home?: string; rule
     if (existsSync(user)) add(user, "user-memory", rules.userMemory);
   }
 
-  const queue = sources
-    .filter((src) => ["memory", "nested-memory", "local-memory", "user-memory"].includes(src.kind))
-    .map((src) => ({ path: src.path, absolute: src.kind === "user-memory", applies: src.shouldApply, hops: 0 }));
-  const visited = new Set(queue.map((q) => `${q.absolute}:${q.path}`));
-  while (queue.length > 0) {
-    const from = queue.shift()!;
+  type Pending = { path: string; absolute: boolean; applies: ApplyRule; hops: number };
+  const startup: Pending[] = [];
+  const later: Pending[] = [];
+  const enqueue = (p: Pending): void => {
+    (p.applies === "yes" ? startup : later).push(p);
+  };
+  for (const src of sources) {
+    if (["memory", "nested-memory", "local-memory", "user-memory"].includes(src.kind)) enqueue({ path: src.path, absolute: src.kind === "user-memory", applies: src.shouldApply, hops: 0 });
+  }
+  const parsed = new Set<string>();
+  const recorded = new Set<string>();
+  while (startup.length > 0 || later.length > 0) {
+    const from = (startup.shift() ?? later.shift())!;
+    if (parsed.has(`${from.absolute}:${from.path}`)) continue;
+    parsed.add(`${from.absolute}:${from.path}`);
     const abs = from.absolute ? from.path : join(repoDir, from.path);
     for (const imp of parseImports(readFileSync(abs, "utf8"))) {
       const target = from.absolute ? join(dirname(abs), imp) : normalize(join(dirname(from.path), imp));
       const key = `${from.absolute}:${target}`;
-      if (visited.has(key)) continue;
-      visited.add(key);
-      const exists = existsSync(from.absolute ? target : join(repoDir, target));
+      const exists = isFile(from.absolute ? target : join(repoDir, target));
       const applies: ApplyRule = !exists ? "no" : from.applies === "yes" ? rules.imports : from.applies;
-      sources.push({ path: target, kind: "import", found: exists, shouldApply: applies, observedLoaded: "unknown", actedOn: "unknown" });
-      if (exists && from.hops + 1 < MAX_IMPORT_HOPS) queue.push({ path: target, absolute: from.absolute, applies, hops: from.hops + 1 });
+      if (!recorded.has(key)) {
+        recorded.add(key);
+        sources.push({ path: target, kind: "import", found: exists, shouldApply: applies, observedLoaded: "unknown", actedOn: "unknown" });
+      }
+      if (exists && from.hops + 1 < MAX_IMPORT_HOPS) enqueue({ path: target, absolute: from.absolute, applies, hops: from.hops + 1 });
     }
   }
 
