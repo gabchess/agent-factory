@@ -164,3 +164,21 @@ test("budget and plan refuse spend a fraction of a cent over the cap", () => {
   assert.equal(run(script, ["budget", "--experiment", "experiment.json", "--results", "results.jsonl", "--next-cost", "0.0064"], dir).code, 1);
   assert.equal(run(script, ["plan", "--runs", "10", "--arms", "3", "--cost-per-run", "0.074", "--cap", "2.1"]).code, 1);
 });
+
+test("an option with no value is refused", () => {
+  const r = run(isolatedScript(), ["plan", "--runs", "10", "--cost-per-run", "0.08", "--cap"], tmpdir());
+  assert.equal(r.code, 2);
+  assert.match(r.err, /--cap needs a value/);
+});
+
+test("a not_run line with a negative cost is refused", () => {
+  const dir = lab({ E0: 0, E1: 1, E2: 10 });
+  writeFileSync(join(dir, "results.jsonl"), [
+    JSON.stringify({ arm: "E0", run: 0, verdict: "pass", costUsd: 4 }),
+    JSON.stringify({ arm: "E0", run: 1, verdict: "not_run", costUsd: -4 }),
+    JSON.stringify({ arm: "E0", run: 2, verdict: "not_run" }),
+  ].join("\n") + "\n");
+  const r = run(isolatedScript(), ["budget", "--experiment", "experiment.json", "--results", "results.jsonl", "--next-cost", "2"], dir);
+  assert.equal(r.code, 2);
+  assert.match(r.err, /:2: needs costUsd/);
+});

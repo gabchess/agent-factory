@@ -22,7 +22,12 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--") { rest.push(...argv.slice(i + 1)); break; }
-    if (a.startsWith("--")) { opts[a.slice(2)] = argv[i + 1]; i++; }
+    if (a.startsWith("--")) {
+      const value = argv[i + 1];
+      if (value === undefined || value.startsWith("--")) fail(`${a} needs a value`);
+      opts[a.slice(2)] = value;
+      i++;
+    }
     else rest.push(a);
   }
   return { opts, rest };
@@ -163,7 +168,8 @@ function loadResults(path, { missingIsEmpty = false } = {}) {
     try { row = JSON.parse(line); } catch { fail(`${path}:${i + 1}: not valid JSON`); }
     if (!VERDICTS.includes(row.verdict)) fail(`${path}:${i + 1}: verdict must be one of ${VERDICTS.join(", ")}`);
     if (typeof row.arm !== "string" || !Number.isInteger(row.run)) fail(`${path}:${i + 1}: needs a string arm and a whole-number run`);
-    if (row.verdict !== "not_run" && !(typeof row.costUsd === "number" && row.costUsd >= 0)) fail(`${path}:${i + 1}: needs costUsd, a number of dollars; use the most a run can cost when the harness gives no figure`);
+    const costOk = typeof row.costUsd === "number" && Number.isFinite(row.costUsd) && row.costUsd >= 0;
+    if ((row.verdict !== "not_run" || row.costUsd !== undefined) && !costOk) fail(`${path}:${i + 1}: needs costUsd, a number of dollars; use the most a run can cost when the harness gives no figure`);
     return { ...row, costUsd: row.costUsd ?? 0 };
   });
 }
@@ -229,7 +235,7 @@ function report(opts) {
     groups.set(key, [...(groups.get(key) ?? []), `${r.arm}#${r.run}`]);
   }
   const reasons = [...groups].sort((x, y) => y[1].length - x[1].length).map(([key, runs]) => `- ${runs.length} run${runs.length === 1 ? "" : "s"} ${key} (${runs.sort((x, y) => x.localeCompare(y, "en", { numeric: true })).join(", ")})`);
-  out.push("", "## Cost", "", `${usd(spent(results))} spent of the ${usd(exp.budget.capUsd)} cap. Compare it with the provider's usage page before the next paid run.`);
+  out.push("", "## Cost", "", `${usd(spent(results))} for the runs in this file. Smoke and pilot are not in it: \`budget\` with every phase's results gives the total against the ${usd(exp.budget.capUsd)} cap. Compare it with the provider's usage page before the next paid run.`);
   out.push("", "## Failures", "", ...(reasons.length ? reasons : ["- none recorded"]));
   console.log(out.join("\n"));
   return valid ? 0 : 1;
