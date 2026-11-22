@@ -15,9 +15,10 @@ export function frontmatter(text) {
     const match = raw.match(KEY);
     if (match) {
       const value = match[2].trim();
-      current = { value: BLOCK.test(value) ? "" : unquote(value), line: index + 2, block: BLOCK.test(value) };
+      const block = BLOCK.test(value.replace(/\s+#.*$/, ""));
+      current = { value: block ? "" : unquote(value), line: index + 2, continues: block || (value !== "" && !QUOTED.test(value)) };
       fields.set(match[1], current);
-    } else if (current?.block && raw.trim()) {
+    } else if (current?.continues && /^\s/.test(raw) && raw.trim()) {
       current.value = [current.value, raw.trim()].filter(Boolean).join(" ");
     }
   });
