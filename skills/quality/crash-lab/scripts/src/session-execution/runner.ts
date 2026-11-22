@@ -155,14 +155,14 @@ export async function runPhase(opts: {
         try {
           record.artifact = snapshotWorkspace(ws.dir, opts.artifactDir, `${slot.key.replace(/:/g, "_")}_attempt${attempt}`);
         } catch (err) {
-          record.artifactError = (err as Error).message;
+          record.artifactError = `${(err as Error).message}; workspace kept at ${ws.dir}`;
         }
       }
       result.attempts.push(record);
       opts.onAttempt?.(result.slot.key, record, "session");
       const terminal = (): void => {
         opts.onAttempt?.(result.slot.key, record, "terminal");
-        if (opts.artifactDir) for (const d of [ws.dir, home]) rmSync(d, { recursive: true, force: true });
+        if (opts.artifactDir && !record.artifactError) for (const d of [ws.dir, home]) rmSync(d, { recursive: true, force: true });
       };
 
       if (outcome.status === "credit_exhausted") {
