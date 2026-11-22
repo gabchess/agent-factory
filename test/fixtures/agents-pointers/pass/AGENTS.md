@@ -10,3 +10,4 @@ README.md explains the layout.
 - when you review, read `README.md`.
 - When you add a check or change one,
   read `checks/README.md`.
+- When you add a check, read `checks/README.md#adding`.

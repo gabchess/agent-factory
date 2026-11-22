@@ -23,7 +23,7 @@ function pointerFailures({ path, text }, contains) {
   return withItemStart(proseLines(text)).flatMap(({ line, raw, start }) =>
     [...raw.matchAll(POINTER)].flatMap((match) => {
       const column = match.index + 1;
-      const target = match[1] ?? match[2];
+      const target = (match[1] ?? match[2])?.replace(/[?#].*$/, "");
       return [
         ...(target && !contains(posix.join(folder, target)) ? [{ path, line, column, message: deadPointer(target) }] : []),
         ...(WHEN.test(start) ? [] : [{ path, line, column, message: NO_CONDITION }]),
