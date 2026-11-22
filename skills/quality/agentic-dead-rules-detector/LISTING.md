@@ -19,9 +19,9 @@ Your agent reads every rule in `AGENTS.md`, `CLAUDE.md` or a skill on every run.
 
 Agentic Dead Rules Detector runs the agent instead. Your agent builds controlled variants ("arms") of one coding task that differ by a single change, such as a deleted instruction line, a rewrite or a renamed field. Each run is a fresh session of the agent you already use, started in its own copy of the repository with no memory of the others. When a session ends, a verifier the agent never saw checks the work: exact outputs on held-out inputs, the repository's tests with skipped tests counted as failures, and no change to protected files. How the session ended is logged beside the verdict and never counts toward it.
 
-Before any money is spent, the skill makes your agent prove the verifier: every known-bad fixture, built from a real past mistake or a tampering trick, has to fail. The runs start only after you name a spend cap, and a budget check before each run stops the experiment before it can cross it.
+Before any money is spent, the skill makes your agent prove the verifier: every known-bad fixture, built from a real past mistake or a tampering trick, has to fail. The runs start only after you name a spend cap, and a budget check before each run stops the experiment before it can cross it. That is a hard stop when your harness enforces a per-session spend limit. Without one, the check uses your agent's estimate of the next run, so a run that costs more than estimated can still go over.
 
-You get a Markdown report with pass rates and 95% Wilson intervals, a Fisher exact test on one comparison chosen before the runs, the total cost against your cap, every failure grouped by reason, and a proposed decision for the instruction (keep, shorten, move into code, repair or remove). It says "inconclusive" when the data cannot tell, and never calls that equivalence.
+You get a Markdown report with pass rates and 95% Wilson intervals, a Fisher exact test on one comparison chosen before the runs, the main phase's cost (the budget check adds smoke and pilot for the total against your cap), every failure grouped by reason, and a proposed decision for the instruction (keep, shorten, move into code, repair or remove). It says "inconclusive" when the data cannot tell, and never calls that equivalence.
 
 "Dead" means what the numbers allow: no measurable effect at the number of runs you paid for. The report calls that inconclusive. Before you spend anything, `plan` shows which pass counts would reach significance at your planned run count, as a guide to how many runs to buy. The report then tests the one comparison you picked before the runs, on the runs your check judged pass or fail, and names a measured difference only when that test reaches significance: whether the rule helped, hurt, or a rename or a check did its job better. A rule also has to reach the agent to count: put it in a file your harness loads at the start of a session, because a rule in a file it never reads looks just as dead.
 
@@ -58,7 +58,7 @@ The agent failed the same held-out check in 19 of the 20 runs that started next 
 - Primary, E0 vs E1 (does the excuse comment lower the pass rate?): inconclusive: no difference detected at this size (p=1.000). This does not show the arms are equivalent.
 - Exploratory, E0 vs E2 (does an exact helper raise the pass rate?): exploratory, no claim (p=0.000).
 - Failures: 19 runs failed on `Q-09 (huge-refund) expected USD,-90071992547409.90, got USD,-90071992547409.91`.
-- Cost: $2.22 spent of the $5.00 cap.
+- Cost: $2.22 for the main phase, $2.91 with smoke and pilot, of the $5.00 cap.
 
 ## Proposed change
 
