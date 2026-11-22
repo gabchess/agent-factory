@@ -13,7 +13,7 @@ Each slot (one scheduled run of one arm) ends as one of four verdicts:
 | `unknown` | The harness errored on every retry, or the verifier itself broke |
 | `not_run` | The next attempt could have crossed the spend cap, or the provider's credit ran out |
 
-How each session ended is recorded and counted (the lab calls a normal finish "claimed success"), never used as the verdict. A report is invalid when more than the experiment's `invalidIfUnresolvedShareAbove` share of slots is unknown.
+How each session ended is recorded. A session that timed out or hit its budget fails without verification, and a harness error makes the slot `unknown`. A normal finish (the lab's "claimed success") is counted but never passes a slot: only verification can. A report is invalid when more than the experiment's `invalidIfUnresolvedShareAbove` share of slots is unknown.
 
 ## Phases
 
