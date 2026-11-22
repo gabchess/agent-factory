@@ -19,7 +19,7 @@ Orchestrator → control the flow → structure outputs → execute actions → 
 | Folder | Holds |
 |---|---|
 | `agents/` | Agent definitions, grouped like `skills/` |
-| `skills/` | Skills grouped by outcome, linked flat into each harness |
+| `skills/` | A pointer to [gabchess/skills](https://github.com/gabchess/skills), where every skill lives |
 | `tools/` | MCP contracts and access rules |
 | `data/` | Memory, run records, evals and audit tables |
 | `templates/` | One template per artifact kind |

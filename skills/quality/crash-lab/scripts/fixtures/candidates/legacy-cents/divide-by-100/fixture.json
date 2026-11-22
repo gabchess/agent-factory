@@ -1,1 +1,0 @@
-{ "arm": "A0", "extends": ["_common"], "description": "Wrong: divides every currency by 100 with floats.", "expect": { "verdict": "fail", "reasonIncludes": ["H-10 (zero-decimal) expected JPY,500, got JPY,5.00", "H-08 (huge)"] } }

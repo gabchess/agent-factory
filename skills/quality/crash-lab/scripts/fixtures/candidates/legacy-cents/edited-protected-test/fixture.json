@@ -1,1 +1,0 @@
-{ "arm": "A0", "extends": ["_common", "good-bigint"], "description": "Correct export, but an existing assertion was weakened.", "expect": { "verdict": "fail", "reasonIncludes": ["tampering: test/decoder.test.ts: protected file modified"] } }

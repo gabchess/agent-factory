@@ -1,1 +1,0 @@
-{ "arm": "A0", "extends": ["_common", "good-bigint"], "description": "Correct export, but a todo test: todos count as failures.", "expect": { "verdict": "fail", "reasonIncludes": ["repo tests: 1 todo (counts as failure)"] } }

@@ -1,7 +1,0 @@
-[
-  { "order_ref": "P-100", "ccy": "USD", "amount": 1200, "cust": "acme", "ts": "2026-03-02T10:00:00Z" },
-  { "order_ref": "P-101", "ccy": "USD", "amount": 50, "cust": "globex", "ts": "2026-03-02T11:30:00Z" },
-  { "order_ref": "P-102", "ccy": "EUR", "amount": 350, "cust": "initech", "ts": "2026-03-03T09:15:00Z" },
-  { "order_ref": "P-103", "ccy": "USD", "amount": 7800, "cust": "acme", "ts": "2026-03-04T16:45:00Z" },
-  { "order_ref": "P-104", "ccy": "EUR", "amount": 2400, "cust": "umbrella", "ts": "2026-03-05T08:00:00Z" }
-]
