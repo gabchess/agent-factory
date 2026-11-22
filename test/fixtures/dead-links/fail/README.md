@@ -3,3 +3,4 @@ A path out of the repo is dead: [outside](../outside.md).
 
 [old]: docs/old.md
 A malformed escape is dead too: [bad](50%zz.md).
+[a [nested] label](docs/gone.md) is dead.

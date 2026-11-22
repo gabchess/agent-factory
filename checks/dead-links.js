@@ -1,9 +1,9 @@
 import { posix } from "node:path";
 import { isMarkdown, proseLines } from "./markdown.js";
 
-const INLINE = /\[[^\]]*\]\(\s*(?:<([^>]+)>|([^)\s]+))(?:\s+[^)]*)?\)/g;
-const REFERENCE = /^ {0,3}\[[^\]]+\]:\s*<?([^\s>]+)>?/g;
-const EXTERNAL = /^([a-z][a-z0-9+.-]*:|#)/i;
+const INLINE = /\[(?:[^[\]]|\[[^\]]*\])*\]\(\s*(?:<([^>]+)>|((?:[^()\s]|\([^()\s]*\))+))(?:\s+[^)]*)?\)/g;
+const REFERENCE = /^ {0,3}\[(?!\^)[^\]]+\]:\s*(?:<([^>]+)>|(\S+))/g;
+const EXTERNAL = /^([a-z][a-z0-9+.-]*:|#|\/\/)/i;
 
 function decode(target) {
   try {
