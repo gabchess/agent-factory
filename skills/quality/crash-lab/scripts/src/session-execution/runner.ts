@@ -127,8 +127,16 @@ export async function runPhase(opts: {
         if (result.attempts.length > 0) result.verdict = "unknown";
         return;
       }
-      const ws = buildArm(caseSpec, slot.arm);
-      const home = makeTempDir("home-");
+      let ws: ReturnType<typeof buildArm>;
+      let home: string;
+      try {
+        ws = buildArm(caseSpec, slot.arm);
+        home = makeTempDir("home-");
+      } catch (err) {
+        stop = `workspace setup failed: ${(err as Error).message}`;
+        release();
+        throw err;
+      }
       const outcome = await safeRun(adapter, {
         workdir: ws.dir,
         home,

@@ -368,3 +368,8 @@ test("attempts log lines that are not attempt records are reported, not trusted"
   assert.equal(entries.length, 3);
   assert.ok(entries.every((e) => !e.artifactOk && /is not an attempt record/.test(e.problems[0])));
 });
+
+test("a workspace that cannot be built fails the phase without leaving a worker waiting for budget", { timeout: 20_000 }, async () => {
+  const exp = small({ arms: ["ZZ"], budget: { capUsd: 2, confirmed: false }, phases: { ...base.phases, main: { ...base.phases.main, runsPerArm: 2 } } });
+  await assert.rejects(runPhase({ experiment: exp, caseSpec, phase: "main", adapter: fakeAdapter(FIXTURES, {}), ledger: newLedger(2), concurrency: 2 }), /ZZ/);
+});
