@@ -26,13 +26,21 @@ export function reverifyAttempts(opts: { attemptsLog: string; caseSpec: CaseSpec
   const lines = readFileSync(opts.attemptsLog, "utf8").split("\n");
   for (const [i, line] of lines.entries()) {
     if (!line.trim()) continue;
-    let rec: LoggedAttempt;
+    const bad = (problem: string): void => {
+      out.push({ slot: `line ${i + 1}`, attempt: 0, status: "harness_error", recordedVerdict: null, reverifiedVerdict: null, match: null, artifactOk: false, problems: [`attempts log line ${i + 1} ${problem}`] });
+    };
+    let parsed: unknown;
     try {
-      rec = JSON.parse(line) as LoggedAttempt;
+      parsed = JSON.parse(line);
     } catch (err) {
-      out.push({ slot: `line ${i + 1}`, attempt: 0, status: "harness_error", recordedVerdict: null, reverifiedVerdict: null, match: null, artifactOk: false, problems: [`attempts log line ${i + 1} is not JSON: ${(err as Error).message}`] });
+      bad(`is not JSON: ${(err as Error).message}`);
       continue;
     }
+    if (!isLoggedAttempt(parsed)) {
+      bad("is not an attempt record (needs slot, attempt, status and stage)");
+      continue;
+    }
+    const rec = parsed;
     const key = `${rec.slot}#${rec.attempt}`;
     const prev = latest.get(key);
     if (!prev || prev.stage === "session") latest.set(key, rec);
@@ -66,4 +74,10 @@ export function reverifyAttempts(opts: { attemptsLog: string; caseSpec: CaseSpec
     out.push(entry);
   }
   return out.sort((a, b) => a.slot.localeCompare(b.slot) || a.attempt - b.attempt);
+}
+
+function isLoggedAttempt(v: unknown): v is LoggedAttempt {
+  if (v === null || typeof v !== "object" || Array.isArray(v)) return false;
+  const r = v as Record<string, unknown>;
+  return typeof r.slot === "string" && Number.isInteger(r.attempt) && typeof r.status === "string" && (r.stage === "session" || r.stage === "terminal");
 }
