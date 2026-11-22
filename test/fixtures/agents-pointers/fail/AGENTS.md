@@ -5,3 +5,5 @@
 - Always read GLOSSARY.md first.
 - When you plan, read PLAN.md.
 - Read [guide][g] first.
+- When you quote `read ` here, read `nope.md`.
+- When you type \`, read `gone.md`.

@@ -1,5 +1,5 @@
 const FENCE = /^\s*(`{3,}|~{3,})/;
-const INLINE_CODE = /(?<!`)(`+)(?!`)[^]*?(?<!`)\1(?!`)/g;
+const INLINE_CODE = /(?<![`\\])(`+)(?!`)[^]*?(?<!`)\1(?!`)/g;
 const maskInlineCode = (line) => line.replace(INLINE_CODE, (code) => "x".repeat(code.length));
 
 export const isMarkdown = (path) => path.endsWith(".md");
