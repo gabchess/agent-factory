@@ -2,7 +2,7 @@ import { frontmatter } from "./frontmatter.js";
 import { proseLines } from "./markdown.js";
 import { TEMPLATED, isA } from "./artifacts.js";
 
-const headingText = (raw) => raw.trim().replace(/\s*<!--.*?-->$/, "").replace(/\s+#+$/, "");
+const headingText = (raw) => raw.trim().replace(/\s*<!--(?:(?!<!--).)*-->$/, "").replace(/\s+#+$/, "");
 
 const headings = (text) =>
   proseLines(text)
