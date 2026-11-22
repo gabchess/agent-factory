@@ -1,5 +1,5 @@
 const LIMIT = 60;
-const ADR = /^decisions\/(?!README\.md$)[^/]+\.md$/;
+const ADR = /^decisions\/\d{4}-[^/]+\.md$/;
 
 const lineCount = (text) => text.split("\n").length - (text.endsWith("\n") ? 1 : 0);
 

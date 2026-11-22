@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { check } from "../checks/adr-length.js";
 import { fixture } from "./fixture.js";
 
-test("an ADR of 60 lines passes, and the folder README is not an ADR", () => {
+test("an ADR of 60 lines passes, and only numbered files are ADRs", () => {
   assert.deepEqual(check(fixture("adr-length", "pass")), []);
 });
 

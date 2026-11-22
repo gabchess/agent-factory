@@ -22,7 +22,7 @@ function deadLinks({ path, text }, contains) {
       .filter(({ target }) => !EXTERNAL.test(target))
       .filter(({ target }) => {
         const resolved = resolve(path, target);
-        return resolved !== "." && (resolved.startsWith("..") || !contains(resolved));
+        return resolved !== "." && ((resolved === ".." || resolved.startsWith("../")) || !contains(resolved));
       })
       .map(({ target, column }) => ({ path, line, column, message: `dead link to \`${target}\`. Fix the path or remove the link.` })),
   );
