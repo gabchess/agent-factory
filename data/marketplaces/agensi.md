@@ -22,6 +22,19 @@ What the Agensi upload form asks for, so a listing from `templates/listing/LISTI
 | Screenshots | Up to 6 images, 10 MB each |
 | Demo video | A YouTube or Loom link |
 
+## How a buyer's agent runs a skill
+
+Recorded 2026-11-22 from [How agents load skills](https://www.agensi.io/docs/how-agents-load-skills) and [Package your skill](https://www.agensi.io/docs/packaging).
+
+- Delivery is through the Agensi MCP server only. Nothing is installed on the buyer's machine, and the agent is told not to save the skill into project or skill folders.
+- The agent receives every `SKILL.md`, then up to 200 other text files within 6 million characters, and fetches each file on demand. Images, PDFs and other binary files are listed but never served.
+- Each script runs on its own: the agent writes it unchanged to a temporary file, runs it and deletes it. A script cannot import or read any other file in the package, so the data it needs goes inside the script.
+- Keep each script's logic under 20 KB. Bundled dependencies such as `node_modules` are not allowed, and `.git` folders are removed on upload.
+- Plugins, hooks, slash commands and MCP server settings cannot be sold. A tool that must be installed separately goes under Requires.
+- The security scan fails on executables, secrets, deleting from root paths, piping a download into a shell, reading environment variables and sending them over the network, network calls combined with reading local data, hidden or encoded code, and prompt injection phrases. Curl, fetch, file writes, sudo and base64 only warn. A person makes the final call.
+
+A skill is ready for Agensi when every script in it runs alone from a temporary directory with no other package file present, and a fresh agent given only the text files completes a realistic request.
+
 A skill can also call tools Agensi hosts and pays for, chosen per skill at upload. Sales pay 70 percent to the creator, and listing is not exclusive. Every upload gets a security scan and a manual review.
 
 ## Package
