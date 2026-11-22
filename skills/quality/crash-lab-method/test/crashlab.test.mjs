@@ -109,3 +109,32 @@ test("rehearse fails when a bad fixture passes the verifier", () => {
   assert.equal(caught.code, 1);
   assert.match(caught.out, /\| sneaky \| fail \| pass \| MISMATCH \|/);
 });
+
+test("budget treats a results file not written yet as empty and sums every phase", () => {
+  const dir = lab({ E0: 0, E1: 1, E2: 10 });
+  const script = isolatedScript();
+  const fresh = run(script, ["budget", "--experiment", "experiment.json", "--results", "results-smoke.jsonl,results-pilot.jsonl", "--next-cost", "0.1"], dir);
+  assert.equal(fresh.code, 0, fresh.err);
+  assert.match(fresh.out, /\$0\.00 spent/);
+  writeFileSync(join(dir, "results-smoke.jsonl"), JSON.stringify({ arm: "E0", run: 0, verdict: "pass", costUsd: 2.5 }) + "\n");
+  assert.equal(run(script, ["budget", "--experiment", "experiment.json", "--results", "results-smoke.jsonl,results.jsonl", "--next-cost", "0.5"], dir).code, 1);
+});
+
+test("budget and plan accept a run that exactly fills the cap", () => {
+  const dir = lab({ E0: 0, E1: 1, E2: 10 });
+  writeFileSync(join(dir, "results.jsonl"), [0.1, 0.2].map((costUsd, run) => JSON.stringify({ arm: "E0", run, verdict: "pass", costUsd })).join("\n"));
+  writeFileSync(join(dir, "experiment.json"), JSON.stringify({ id: "x", arms: ["E0", "E1"], runsPerArm: 1, budget: { capUsd: 0.6 }, comparisons: [{ a: "E0", b: "E1", role: "primary" }] }));
+  const script = isolatedScript();
+  assert.equal(run(script, ["budget", "--experiment", "experiment.json", "--results", "results.jsonl", "--next-cost", "0.3"], dir).code, 0);
+  assert.equal(run(script, ["plan", "--runs", "3", "--arms", "1", "--cost-per-run", "0.1", "--cap", "0.3"]).code, 0);
+});
+
+test("rehearse counts a crashing verifier as broken, not as a caught mistake", () => {
+  const dir = mkdtempSync(join(tmpdir(), "crashlab-crash-"));
+  for (const name of ["good", "bad"]) mkdirSync(join(dir, name));
+  writeFileSync(join(dir, "good", "ok"), "");
+  const verifier = ["--", process.execPath, "-e", "const fs = require('fs'); if (fs.existsSync(process.argv[1] + '/ok')) process.exit(0); process.exit(3)", "{dir}"];
+  const r = run(isolatedScript(), ["rehearse", "--good", "good", "--bad", "bad", ...verifier], dir);
+  assert.equal(r.code, 1);
+  assert.match(r.out, /\| bad \| fail \| error: exit 3 \| MISMATCH \|/);
+});

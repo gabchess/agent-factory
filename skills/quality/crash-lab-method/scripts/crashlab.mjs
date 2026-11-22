@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
@@ -7,10 +7,11 @@ const USAGE = `crashlab.mjs: plan, rehearse, budget and report for an instructio
 
   node crashlab.mjs plan --runs 10 [--arms 3] [--cost-per-run 0.08] [--cap 5]
   node crashlab.mjs rehearse --good <dir>[,<dir>] --bad <dir>[,<dir>] -- <verifier command with {dir}>
-  node crashlab.mjs budget --experiment experiment.json --results results.jsonl --next-cost 0.10
+  node crashlab.mjs budget --experiment experiment.json --results results-smoke.jsonl,results-pilot.jsonl,results.jsonl --next-cost 0.10
   node crashlab.mjs report --experiment experiment.json --results results.jsonl
 
-Node.js 18 or later, standard library only. Exit code 1 means the check failed.`;
+Node.js 18 or later, standard library only. Exit code 1 means the check failed.
+A verifier exits 0 for correct work, 1 for wrong work, and anything else when it broke.`;
 
 const VERDICTS = ["pass", "fail", "unknown", "not_run"];
 const Z95 = 1.959963984540054;
@@ -81,6 +82,7 @@ export function wilson(passes, n) {
   return [Math.max(0, centre - half), Math.min(1, centre + half)];
 }
 
+const cents = (x) => Math.round(x * 100);
 const pct = (x) => `${Math.round(x * 100)}%`;
 const usd = (x) => `$${x.toFixed(2)}`;
 
@@ -107,7 +109,7 @@ function plan(opts) {
     lines.push("", `Estimated main phase cost: ${runs * arms} runs at ${usd(each)} = ${usd(total)}.`);
     if (opts.cap !== undefined) {
       const cap = money(opts.cap, "cap");
-      ok = total <= cap;
+      ok = cents(each) * runs * arms <= cents(cap);
       lines.push(ok ? `Within the ${usd(cap)} cap.` : `Over the ${usd(cap)} cap: lower the runs or raise the cap with the owner's approval.`);
     }
   }
@@ -120,17 +122,18 @@ function rehearse(opts, command) {
   const split = (value) => (value ? String(value).split(",").filter(Boolean) : []);
   const cases = [...split(opts.good).map((dir) => ({ dir, expect: "pass" })), ...split(opts.bad).map((dir) => ({ dir, expect: "fail" }))];
   if (!cases.some((c) => c.expect === "pass") || !cases.some((c) => c.expect === "fail")) fail("rehearsal needs at least one --good and one --bad fixture");
-  const lines = ["| Fixture | Expected | Verifier said | Result |", "|---|---|---|---|"];
+  const lines = ["| Fixture | Expected | Verifier said | Result | Verifier output |", "|---|---|---|---|---|"];
   let mismatches = 0;
   for (const c of cases) {
     const args = command.map((part) => part.replaceAll("{dir}", c.dir));
     const run = spawnSync(args[0], args.slice(1), { encoding: "utf8", timeout: 120000 });
-    const said = run.error ? `error: ${run.error.message}` : run.status === 0 ? "pass" : "fail";
+    const said = run.error ? `error: ${run.error.message}` : run.status === 0 ? "pass" : run.status === 1 ? "fail" : `error: ${run.signal ?? `exit ${run.status}`}`;
     const ok = said === c.expect;
     if (!ok) mismatches++;
-    lines.push(`| ${c.dir} | ${c.expect} | ${said} | ${ok ? "ok" : "MISMATCH"} |`);
+    const firstLine = `${run.stdout ?? ""}${run.stderr ?? ""}`.trim().split(/\r?\n/)[0] ?? "";
+    lines.push(`| ${c.dir} | ${c.expect} | ${said} | ${ok ? "ok" : "MISMATCH"} | ${firstLine.replaceAll("|", "\\|").slice(0, 120)} |`);
   }
-  lines.push("", mismatches === 0 ? "Verifier rehearsal passed: every fixture got the expected verdict." : `Verifier rehearsal failed: ${mismatches} fixture(s) got the wrong verdict. Fix the verifier before any paid run.`);
+  lines.push("", mismatches === 0 ? "Verifier rehearsal passed: every fixture got the expected verdict. Check that each bad fixture's output names the mistake it replays." : `Verifier rehearsal failed: ${mismatches} fixture(s) got the wrong verdict or broke the verifier. Fix the verifier before any paid run.`);
   console.log(lines.join("\n"));
   return mismatches === 0 ? 0 : 1;
 }
@@ -149,7 +152,8 @@ function loadExperiment(path) {
   return { ...exp, comparisons, invalidIfUnresolvedShareAbove: exp.invalidIfUnresolvedShareAbove ?? 0.1 };
 }
 
-function loadResults(path) {
+function loadResults(path, { missingIsEmpty = false } = {}) {
+  if (missingIsEmpty && !existsSync(path)) return [];
   let text;
   try { text = readFileSync(path, "utf8"); } catch (e) { fail(`cannot read results ${path}: ${e.message}`); }
   return text.split(/\r?\n/).filter((line) => line.trim()).map((line, i) => {
@@ -165,10 +169,10 @@ const spent = (results) => results.reduce((sum, r) => sum + r.costUsd, 0);
 
 function budget(opts) {
   const exp = loadExperiment(need(opts, "experiment"));
-  const results = loadResults(need(opts, "results"));
+  const results = String(need(opts, "results")).split(",").filter(Boolean).flatMap((path) => loadResults(path, { missingIsEmpty: true }));
   const next = money(need(opts, "next-cost"), "next-cost");
   const total = spent(results);
-  const ok = total + next <= exp.budget.capUsd;
+  const ok = cents(total) + cents(next) <= cents(exp.budget.capUsd);
   console.log(`${usd(total)} spent of the ${usd(exp.budget.capUsd)} cap. The next run, at up to ${usd(next)}, ${ok ? "fits" : "could cross the cap: stop and mark the remaining runs not_run"}.`);
   return ok ? 0 : 1;
 }
