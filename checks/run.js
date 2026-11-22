@@ -1,4 +1,4 @@
-import { gitRepo } from "./repo-files.js";
+import { gitRepo } from "./git-repo.js";
 import * as adrLength from "./adr-length.js";
 import * as agentsPointers from "./agents-pointers.js";
 import * as deadLinks from "./dead-links.js";

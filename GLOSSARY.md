@@ -10,5 +10,7 @@
 - **Run.** One attempt at one task, recorded in `data/`.
 - **Skill.** A folder with a `SKILL.md` that teaches an agent one workflow. Names are unique across the repo.
 - **Check.** A script CI runs that fails on a broken rule and says how to fix it.
+- **Pointer.** A line in an `AGENTS.md` that says when to read another file: "When you X, read Y". CI fails on a pointer to a missing file or one with no "When".
+- **Fixture.** A small sample repo under `test/fixtures/<check>/` that a check must pass (`pass/`) or fail (`fail/`).
 - **ADR.** A decision record in `decisions/`: the decision, why, and what result backs it.
 - **Verdict.** An independent reviewer's pass or fail on one exact commit.
