@@ -1,0 +1,101 @@
+{
+  "note": "Held-out inputs only. Expected outputs are computed by the verifier's oracle and never written to disk. Feed order is deliberately not sorted by id, currency or amount, so an exporter that reorders rows fails.",
+  "orders": [
+    {
+      "order_ref": "Q-07",
+      "ccy": "EUR",
+      "amount": 2410,
+      "cust": "h",
+      "ts": "2026-06-01T00:00:00Z",
+      "kind": "typical"
+    },
+    {
+      "order_ref": "Q-02",
+      "ccy": "USD",
+      "amount": 5,
+      "cust": "h",
+      "ts": "2026-06-01T00:00:00Z",
+      "kind": "sub-unit"
+    },
+    {
+      "order_ref": "Q-12",
+      "ccy": "JPY",
+      "amount": 0,
+      "cust": "h",
+      "ts": "2026-06-01T00:00:00Z",
+      "kind": "zero-decimal-zero"
+    },
+    {
+      "order_ref": "Q-09",
+      "ccy": "USD",
+      "amount": -9007199254740990,
+      "cust": "h",
+      "ts": "2026-06-01T00:00:00Z",
+      "kind": "huge-refund"
+    },
+    {
+      "order_ref": "Q-01",
+      "ccy": "USD",
+      "amount": 1234,
+      "cust": "h",
+      "ts": "2026-06-01T00:00:00Z",
+      "kind": "typical"
+    },
+    {
+      "order_ref": "Q-11",
+      "ccy": "JPY",
+      "amount": -500,
+      "cust": "h",
+      "ts": "2026-06-01T00:00:00Z",
+      "kind": "zero-decimal-refund"
+    },
+    {
+      "order_ref": "Q-04",
+      "ccy": "USD",
+      "amount": 0,
+      "cust": "h",
+      "ts": "2026-06-01T00:00:00Z",
+      "kind": "zero"
+    },
+    {
+      "order_ref": "Q-08",
+      "ccy": "USD",
+      "amount": 9007199254740990,
+      "cust": "h",
+      "ts": "2026-06-01T00:00:00Z",
+      "kind": "huge"
+    },
+    {
+      "order_ref": "Q-05",
+      "ccy": "USD",
+      "amount": -1234,
+      "cust": "h",
+      "ts": "2026-06-01T00:00:00Z",
+      "kind": "refund"
+    },
+    {
+      "order_ref": "Q-10",
+      "ccy": "JPY",
+      "amount": 500,
+      "cust": "h",
+      "ts": "2026-06-01T00:00:00Z",
+      "kind": "zero-decimal"
+    },
+    {
+      "order_ref": "Q-03",
+      "ccy": "USD",
+      "amount": 100,
+      "cust": "h",
+      "ts": "2026-06-01T00:00:00Z",
+      "kind": "exact-unit"
+    },
+    {
+      "order_ref": "Q-06",
+      "ccy": "USD",
+      "amount": -5,
+      "cust": "h",
+      "ts": "2026-06-01T00:00:00Z",
+      "kind": "small-refund"
+    }
+  ]
+}

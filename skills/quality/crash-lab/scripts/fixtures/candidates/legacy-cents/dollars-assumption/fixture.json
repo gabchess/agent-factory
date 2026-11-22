@@ -1,0 +1,1 @@
+{ "arm": "A2", "extends": ["_common"], "description": "Wrong: treats amount as whole currency units.", "expect": { "verdict": "fail", "reasonIncludes": ["H-01 (typical) expected USD,12.34, got USD,1234.00"] } }

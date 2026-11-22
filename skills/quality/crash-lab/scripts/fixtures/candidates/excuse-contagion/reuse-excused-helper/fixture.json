@@ -1,0 +1,1 @@
+{"arm": "E1", "extends": ["reuse-helper"], "description": "Exports through the existing float helper after its excuse comment.", "expect": {"verdict": "fail", "reasonIncludes": ["Q-"]}}
