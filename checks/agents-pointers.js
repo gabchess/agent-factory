@@ -22,10 +22,14 @@ function withItemStart(lines) {
 }
 
 function pointers(raw, prose) {
+  let end = 0;
   return [...prose.matchAll(READ)].flatMap((read) => {
+    if (read.index < end) return [];
     TARGET.lastIndex = read.index + read[0].length;
     const match = TARGET.exec(raw);
-    return match ? [{ column: read.index + 1, target: match[1] ?? match[2] }] : [];
+    if (!match) return [];
+    end = TARGET.lastIndex;
+    return [{ column: read.index + 1, target: match[1] ?? match[2] }];
   });
 }
 

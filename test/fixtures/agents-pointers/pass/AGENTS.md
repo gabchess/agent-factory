@@ -14,3 +14,4 @@ README.md explains the layout.
 - When you write C#, read `docs/C#.md`.
 
 Write each pointer like `read [guide][g]`, after its condition.
+- When you configure, read [read config.md first](GLOSSARY.md).
