@@ -31,6 +31,6 @@ A rerun goes into a new results file. Old results stay as they are.
 
 ## Cost
 
-- `budget` sums `costUsd` over the phase file and refuses the next run when it could cross `budget.capUsd`.
-- The cap covers one phase file. Add the phases together when you report the experiment's total.
+- `budget` sums `costUsd` over every results file it is given, smoke, pilot and main together, and refuses the next run when it could cross `budget.capUsd`. The cap covers the whole experiment.
+- The report's cost is the main phase only. Add smoke and pilot when you report the experiment's total.
 - After a run, compare the total with the provider's usage page. A gap you cannot explain blocks the next paid run.
