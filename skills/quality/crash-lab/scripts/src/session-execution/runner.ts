@@ -143,6 +143,9 @@ export async function runPhase(opts: {
       let cost: number;
       try {
         cost = ledger.charge(reservation, outcome.usage.costUsd, outcome.usage.reportedCostUsd ?? outcome.usage.costUsd);
+      } catch (err) {
+        stop = `ledger charge failed: ${(err as Error).message}`;
+        throw err;
       } finally {
         release();
       }
