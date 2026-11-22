@@ -208,7 +208,9 @@ export async function runPhase(opts: {
       return;
     }
   };
-  await Promise.all(Array.from({ length: Math.max(1, opts.concurrency ?? 1) }, worker));
+  const settledWorkers = await Promise.allSettled(Array.from({ length: Math.max(1, opts.concurrency ?? 1) }, worker));
+  const failed = settledWorkers.find((w): w is PromiseRejectedResult => w.status === "rejected");
+  if (failed) throw failed.reason;
   return results;
 }
 
