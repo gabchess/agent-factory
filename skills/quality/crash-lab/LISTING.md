@@ -14,9 +14,9 @@
 
 ## Description
 
-Most changes to `AGENTS.md`, `CLAUDE.md` or a skill are reviewed by reading the diff, which cannot show which lines change what the agent does. A rewrite that reads better can drop the one rule that kept the agent from a bug, and the agent will still report success.
+Most changes to `AGENTS.md`, `CLAUDE.md` or a skill are reviewed by reading the diff, which cannot show which lines change what the agent does. A rewrite that reads better can drop the one rule that kept the agent from a bug, and the session will still end as if it worked.
 
-Crash Lab runs the agent instead. It builds controlled variants ("arms") of one coding task that differ by a single change, such as a deleted instruction line, a rewrite or a renamed field. Each run is a fresh agent session in its own Docker sandbox with only the model API reachable. When a session ends, a verifier the agent never saw runs the produced code on held-out inputs, runs the agent's own tests with skips and todos counted as failures, and fails any run that touched a protected file. The agent's own report of success is logged beside the verdict and does not count toward it.
+Crash Lab runs the agent instead. It builds controlled variants ("arms") of one coding task that differ by a single change, such as a deleted instruction line, a rewrite or a renamed field. Each run is a fresh agent session in its own Docker sandbox with only the model API reachable. When a session ends, a verifier the agent never saw runs the produced code on held-out inputs, runs the agent's own tests with skips and todos counted as failures, and fails any run that touched a protected file. How each session ended is logged beside the verdict and does not count toward it.
 
 Before any money is spent, the skill makes the agent prove the verifier: every known-bad fixture, built from a real past mistake or a tampering trick, has to fail for the stated reason. Live runs need a spend cap you approve, and the runner reserves each attempt's cost before starting it.
 
@@ -34,7 +34,7 @@ Our money code has a float helper with a comment saying "Floating-point division
 
 ## Summary
 
-The agent failed the same held-out check in 19 of the 20 runs that started next to the float helper, with or without the comment, and claimed success in all 19. Fixing the helper made every run pass. The comment's own effect is inconclusive at 10 runs per arm.
+The agent failed the same held-out check in 19 of the 20 runs that started next to the float helper, with or without the comment, and all 19 sessions ended normally with no error reported. Fixing the helper made every run pass. The comment's own effect is inconclusive at 10 runs per arm.
 
 ## Setup
 
@@ -45,7 +45,7 @@ The agent failed the same held-out check in 19 of the 20 runs that started next 
 
 ## Main phase
 
-| Arm | Pass | Pass rate | 95% Wilson | Claimed success, failed | Reported USD |
+| Arm | Pass | Pass rate | 95% Wilson | Ended normally, failed | Reported USD |
 | --- | --- | --- | --- | --- | --- |
 | E0 silent | 0 of 10 | 0% | 0% to 28% | 10 | 0.74 |
 | E1 excused | 1 of 10 | 10% | 2% to 40% | 9 | 0.77 |
@@ -113,7 +113,7 @@ One-time, $9.
 
 - Tags: agent evaluation, AGENTS.md, CLAUDE.md, prompt testing, coding agents, Claude Code, A/B testing, regression testing
 - Categories: Developer tools, Testing and QA
-- Use cases: test an instruction change before merging it; find out whether an AGENTS.md line is load-bearing; check whether a code rename can replace an instruction; catch an agent that claims success on broken code
+- Use cases: test an instruction change before merging it; find out whether an AGENTS.md line is load-bearing; check whether a code rename can replace an instruction; catch an agent that finishes cleanly on broken code
 
 ## FAQ
 

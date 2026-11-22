@@ -30,7 +30,7 @@ Hand back the path to the main phase `report.md` and a short summary with:
 - one row per arm: passes out of runs, pass rate and its 95% Wilson interval;
 - the primary comparison's verdict, quoted from the report;
 - cost reported by the harness and cost charged by the lab;
-- every failure reason, and how many runs claimed success but failed the checks;
+- every failure reason, and how many runs finished normally (the lab's "claimed success") but failed the checks;
 - one proposed decision for the instruction (keep, shorten, move into code, repair, remove) as a diff for a person to review.
 
 Leave out what the report cannot carry: an inconclusive result is never "the arms are equivalent", and smoke and pilot results are never findings.
@@ -41,7 +41,7 @@ Read this only when a step is unclear or its rule is questioned.
 
 - Why fixtures come first: Ray Fernando's rule for agent-made checks is to "prove each check catches a real past mistake before you trust it", after Lauren Tan's warning that a check "could be proving false is true". Step 6 is that rule.
 - Why step 4 exists: the same post orders the fixes as architecture, then types, then a lint whose error names the fix, then a test. An instruction is the weakest of these, so test it only when the stronger ones do not fit.
-- Why excuse comments matter: Matt Pocock's comment triage and poteto's `no-comments` skill treat "for now" comments as permission for hacks. The bundled `excuse-contagion` case measured it: in 19 of 20 runs next to a float helper the agent claimed success and the held-out check failed.
+- Why excuse comments matter: Matt Pocock's comment triage and poteto's `no-comments` skill treat "for now" comments as permission for hacks. The bundled `excuse-contagion` case measured it: in 19 of 20 runs next to a float helper the session ended normally and the held-out check failed.
 - Why the verifier checks more than the final output: a pass needs exact held-out results, passing repository tests with none skipped or todo, and no protected file changed, so output that only looks right still fails.
 - Why charged and reported cost differ: the harness's own cost figure ran below the provider's bill, so the lab charges the larger of the reported cost and its own token pricing.
 - When you write a case or an arm, read `references/case-format.md`.
