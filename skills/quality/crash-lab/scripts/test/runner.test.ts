@@ -345,12 +345,11 @@ test("an experiment with a repeated arm is rejected before any spend", () => {
   assert.throws(() => loadExperiment(path), /arms must be unique/);
 });
 
-test("a ledger lock left by a dead runner is recovered", () => {
+test("a ledger lock left by a dead runner says how to recover it and is never removed automatically", () => {
   const path = join(makeTempDir(), "ledger.json");
   writeFileSync(`${path}.lock`, "999999999");
-  const ledger = BudgetLedger.open(path, 2);
-  assert.equal(readFileSync(`${path}.lock`, "utf8"), String(process.pid));
-  ledger.close();
+  assert.throws(() => BudgetLedger.open(path, 2), /PID 999999999, no longer running\): if no other runner is active, delete .*ledger\.json\.lock and retry/);
+  assert.equal(readFileSync(`${path}.lock`, "utf8"), "999999999");
 });
 
 test("a truncated attempts log line is reported, not thrown", () => {
@@ -362,13 +361,10 @@ test("a truncated attempts log line is reported, not thrown", () => {
   assert.match(entries[0].problems[0], /not JSON/);
 });
 
-test("two runners recovering the same dead lock never both hold it", () => {
-  const path = join(makeTempDir(), "ledger.json");
-  writeFileSync(`${path}.lock`, "999999999");
-  writeFileSync(`${path}.lock.recovery`, String(process.pid));
-  assert.throws(() => BudgetLedger.open(path, 2), /locked by another runner/);
-  writeFileSync(`${path}.lock.recovery`, "999999999");
-  const first = BudgetLedger.open(path, 2);
-  assert.throws(() => BudgetLedger.open(path, 2), /locked by another runner/);
-  first.close();
+test("attempts log lines that are not attempt records are reported, not trusted", () => {
+  const log = join(makeTempDir(), "attempts.jsonl");
+  writeFileSync(log, "{}\nnull\n");
+  const entries = reverifyAttempts({ attemptsLog: log, caseSpec, checksSha256: base.checksSha256, runner: hostRunner });
+  assert.equal(entries.length, 2);
+  assert.ok(entries.every((e) => !e.artifactOk && /is not an attempt record/.test(e.problems[0])));
 });
