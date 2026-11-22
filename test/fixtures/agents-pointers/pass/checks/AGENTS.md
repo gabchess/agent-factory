@@ -1,0 +1,1 @@
+- When you change a check, read `README.md`.
