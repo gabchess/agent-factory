@@ -43,13 +43,7 @@ export class BudgetLedger {
       fd = openSync(lockPath, "wx");
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "EEXIST") throw new Error(`ledger lock ${lockPath} could not be created: ${(err as Error).message}`, { cause: err });
-      if (lockOwnerAlive(lockPath)) throw new Error(`ledger ${path} is locked by another runner`);
-      unlinkSync(lockPath);
-      try {
-        fd = openSync(lockPath, "wx");
-      } catch {
-        throw new Error(`ledger ${path} is locked by another runner`);
-      }
+      fd = recoverAbandonedLock(path, lockPath);
     }
     try {
       writeFileSync(fd, String(process.pid));
@@ -155,5 +149,28 @@ function lockOwnerAlive(lockPath: string): boolean {
     return true;
   } catch (err) {
     return (err as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+function recoverAbandonedLock(path: string, lockPath: string): number {
+  const locked = new Error(`ledger ${path} is locked by another runner`);
+  const recoveryPath = `${lockPath}.recovery`;
+  let recovery: number;
+  try {
+    recovery = openSync(recoveryPath, "wx");
+  } catch {
+    throw locked;
+  }
+  try {
+    if (existsSync(lockPath) && lockOwnerAlive(lockPath)) throw locked;
+    if (existsSync(lockPath)) unlinkSync(lockPath);
+    try {
+      return openSync(lockPath, "wx");
+    } catch {
+      throw locked;
+    }
+  } finally {
+    closeSync(recovery);
+    unlinkSync(recoveryPath);
   }
 }
