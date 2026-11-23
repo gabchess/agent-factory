@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { check } from "../checks/pr-title.js";
 
-const titles = (kind) => readFileSync(new URL(`./fixtures/pr-title/${kind}.txt`, import.meta.url), "utf8").split("\n").slice(0, -1);
+const titles = (kind) => readFileSync(new URL(`./fixtures/pr-title/${kind}.txt`, import.meta.url), "utf8").split(/\r?\n/).slice(0, -1);
 
 test("titles in the Conventional Commits format pass", () => {
   assert.deepEqual(titles("pass").map(check), titles("pass").map(() => []));
