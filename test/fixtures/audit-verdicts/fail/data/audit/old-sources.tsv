@@ -1,0 +1,7 @@
+source	path	verdict	reason	ticket
+old-repo	a.md	keep	Copied as is.	
+old-repo	b.md	rewrite	Survives.	
+old-repo	c.md	delete	Stale.	GAB-2
+old-repo	d.md	delete		
+old-repo	a.md	delete	Seen twice.	
+old-repo	e.md	delete

@@ -19,6 +19,7 @@ The checks:
 - `adr-length.js`: fails on an ADR in `decisions/` over 60 lines.
 - `adr-names.js`: fails on a Markdown file in `decisions/` that is not a numbered ADR or the folder's `README.md`, `AGENTS.md` or `CLAUDE.md`.
 - `agents-pointers.js`: fails on an `AGENTS.md` pointer to a path that does not exist, and on a pointer whose line does not start with when to read it.
+- `audit-verdicts.js`: fails on a verdict table in `data/audit/` whose header is wrong, whose row has a verdict other than delete or rewrite, no reason, a rewrite with no ticket key, a delete with one, or a second row for the same file.
 - `dead-links.js`: fails on a Markdown link to a path in the repo that does not exist.
 - `instruction-snapshot.js`: fails when `data/instructions.snapshot` no longer matches what an agent loads here: every `AGENTS.md` and `CLAUDE.md`, the skill index and the tool contracts.
 - `no-dashes.js`: fails on em and en dashes in any text file, and on a hyphen used as a dash in Markdown prose.
