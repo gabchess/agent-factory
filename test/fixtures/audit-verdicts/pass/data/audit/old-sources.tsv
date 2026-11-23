@@ -1,0 +1,3 @@
+source	path	verdict	reason	ticket
+old-repo	README.md	delete	Front page of a retired repo.	
+old-repo	rules/safety.md	rewrite	Guards harm that cannot be undone.	GAB-1
