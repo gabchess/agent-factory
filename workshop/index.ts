@@ -19,6 +19,10 @@ const JobSchema = z.object({
 const WorkerResultSchema = z.object({
   candidateSha: SHA,
   summary: z.string().min(1),
+  report: z.string().min(1).refine(
+    (report) => /\bSimulation evidence\b/i.test(report),
+    "Worker report must label simulation evidence",
+  ),
   ask: z.string().optional(),
 });
 const ReviewResultSchema = z.object({
@@ -137,44 +141,13 @@ async function verifyTrustedGate(gatePath: string, gateRevision: string): Promis
   }
 }
 
-function workerReport(worker: WorkerResult): string {
-  return [
-    "# Worker report: Route one simulated job through Mastra and the existing gate",
-    "",
-    "## Result",
-    "",
-    `PARTIAL: ${worker.summary}`,
-    "",
-    "## Loaded",
-    "",
-    "- Load: `implement`",
-    "- Load: `tdd`",
-    "- Load: `codebase-design`",
-    "- Load: `mastra`",
-    "- Load: `gabe-voice`",
-    "- Load: `package-management`",
-    "- Use: `ReadFile`",
-    "- Use: `ShellExec`",
-    "- Use: `apply_patch`",
-    "",
-    "## Could not verify",
-    "",
-    "- The worker's claim does not replace independent verification.",
-    "",
-    "## Ask",
-    "",
-    worker.ask ?? "None.",
-    "",
-  ].join("\n");
-}
-
 async function runGate(input: z.infer<typeof ReviewStepOutputSchema>): Promise<{
   decision: "passed" | "retry" | "blocked";
   gateRow: GateRow;
 }> {
   const recordPath = path.join(input.stateDirectory, "gate-runs.jsonl");
   const reportPath = path.join(input.stateDirectory, `${input.executionId}.report.md`);
-  await writeFile(reportPath, workerReport(input.worker), { flag: "wx" });
+  await writeFile(reportPath, input.worker.report, { flag: "wx" });
   const exactReview = input.review.reviewedSha === input.worker.candidateSha;
   const reviewPassed = input.review.verdict === "pass" && exactReview;
   const reason =

@@ -44,6 +44,37 @@ async function createTestDirectory(prefix) {
   return { stateDirectory, briefPath };
 }
 
+function simulatedWorkerReport(result, ask = "None.") {
+  return [
+    "# Worker report: Route one simulated job through Mastra and the existing gate",
+    "",
+    "## Result",
+    "",
+    `PARTIAL: Simulation evidence from a controlled worker adapter fixture. ${result}`,
+    "",
+    "## Loaded",
+    "",
+    "- Load: `implement`",
+    "- Load: `tdd`",
+    "- Load: `codebase-design`",
+    "- Load: `mastra`",
+    "- Load: `gabe-voice`",
+    "- Load: `package-management`",
+    "- Use: `ReadFile`",
+    "- Use: `ShellExec`",
+    "- Use: `apply_patch`",
+    "",
+    "## Could not verify",
+    "",
+    "- The fixture does not verify live worker behavior.",
+    "",
+    "## Ask",
+    "",
+    ask,
+    "",
+  ].join("\n");
+}
+
 test("a scoped job returns the real gate pass with independent worker and reviewer results", async () => {
   const { stateDirectory, briefPath } = await createTestDirectory("workshop-pass-");
   const events = [];
@@ -65,7 +96,11 @@ test("a scoped job returns the real gate pass with independent worker and review
           await readFile(path.join(stateDirectory, "dry-run-passed-job.json"), "utf8"),
         );
         assert.equal(identity.status, "running");
-        return { candidateSha: job.baseSha, summary: "Implemented the approved workshop slice." };
+        return {
+          candidateSha: job.baseSha,
+          summary: "Implemented the approved workshop slice.",
+          report: simulatedWorkerReport("The candidate adapter returns the scoped SHA."),
+        };
       },
       reviewer: async ({ worker }) => {
         events.push("reviewer");
@@ -91,6 +126,70 @@ test("a scoped job returns the real gate pass with independent worker and review
   }
 });
 
+test("the gate sees missing worker report declarations instead of wrapper attestations", async () => {
+  const { stateDirectory, briefPath } = await createTestDirectory("workshop-report-provenance-");
+  const report = [
+    "# Worker report: Route one simulated job through Mastra and the existing gate",
+    "",
+    "## Result",
+    "",
+    "PARTIAL: Simulation evidence from a controlled worker adapter fixture.",
+    "",
+    "## Loaded",
+    "",
+    "- Load: `tdd`",
+    "- Load: `codebase-design`",
+    "- Load: `mastra`",
+    "- Load: `gabe-voice`",
+    "- Load: `package-management`",
+    "- Use: `ReadFile`",
+    "- Use: `ShellExec`",
+    "- Use: `apply_patch`",
+    "",
+    "## Could not verify",
+    "",
+    "- The controlled adapter did not supply an `implement` loading declaration.",
+    "",
+    "## Ask",
+    "",
+    "None.",
+    "",
+  ].join("\n");
+  try {
+    const result = await runWorkshopJob({
+      job: {
+        id: "report-provenance",
+        repository: "gabchess/agent-factory",
+        baseSha,
+        paths: ["workshop/"],
+      },
+      stateDirectory,
+      briefPath,
+      gatePath,
+      gateRevision,
+      worker: async (job) => ({
+        candidateSha: job.baseSha,
+        summary: "Controlled worker fixture.",
+        report,
+      }),
+      reviewer: async ({ worker }) => ({
+        verdict: "pass",
+        reviewedSha: worker.candidateSha,
+        findings: [],
+      }),
+    });
+
+    assert.equal(result.decision, "retry");
+    assert.deepEqual(result.gateRow.missing, ["Load: implement"]);
+    assert.equal(
+      await readFile(path.join(stateDirectory, "dry-run-report-provenance.report.md"), "utf8"),
+      report,
+    );
+  } finally {
+    await rm(stateDirectory, { recursive: true, force: true });
+  }
+});
+
 test("an unknown independent verdict returns the gate retry decision", async () => {
   const { stateDirectory, briefPath } = await createTestDirectory("workshop-retry-");
   try {
@@ -105,7 +204,11 @@ test("an unknown independent verdict returns the gate retry decision", async () 
       briefPath,
       gatePath,
       gateRevision,
-      worker: async (job) => ({ candidateSha: job.baseSha, summary: "Candidate is ready." }),
+      worker: async (job) => ({
+        candidateSha: job.baseSha,
+        summary: "Candidate is ready.",
+        report: simulatedWorkerReport("The candidate adapter returns the scoped SHA."),
+      }),
       reviewer: async ({ worker }) => ({
         verdict: "unknown",
         reviewedSha: worker.candidateSha,
@@ -135,7 +238,11 @@ test("a review of a different SHA returns the gate retry decision", async () => 
       briefPath,
       gatePath,
       gateRevision,
-      worker: async (job) => ({ candidateSha: job.baseSha, summary: "Candidate is ready." }),
+      worker: async (job) => ({
+        candidateSha: job.baseSha,
+        summary: "Candidate is ready.",
+        report: simulatedWorkerReport("The candidate adapter returns the scoped SHA."),
+      }),
       reviewer: async () => ({
         verdict: "pass",
         reviewedSha: "49dd4eebc4178a8f221f915033ce8d345668737e",
@@ -168,6 +275,10 @@ test("an ask from the worker is recorded as a blocked gate outcome", async () =>
       worker: async (job) => ({
         candidateSha: job.baseSha,
         summary: "Worker needs a scope decision.",
+        report: simulatedWorkerReport(
+          "The candidate adapter requests a scope decision.",
+          "Confirm whether the approved path can include README.md.",
+        ),
         ask: "Confirm whether the approved path can include README.md.",
       }),
       reviewer: async ({ worker }) => ({
@@ -203,7 +314,11 @@ test("an out-of-scope path is rejected before the worker starts", async () => {
         gateRevision,
         worker: async (job) => {
           workerStarted = true;
-          return { candidateSha: job.baseSha, summary: "Should not start." };
+          return {
+            candidateSha: job.baseSha,
+            summary: "Should not start.",
+            report: simulatedWorkerReport("The worker should not start."),
+          };
         },
         reviewer: async ({ worker }) => ({
           verdict: "pass",
@@ -237,7 +352,11 @@ test("a base SHA outside the approved checkout is rejected before the worker sta
         gateRevision,
         worker: async (job) => {
           workerStarted = true;
-          return { candidateSha: job.baseSha, summary: "Should not start." };
+          return {
+            candidateSha: job.baseSha,
+            summary: "Should not start.",
+            report: simulatedWorkerReport("The worker should not start."),
+          };
         },
         reviewer: async ({ worker }) => ({
           verdict: "pass",
@@ -267,7 +386,11 @@ test("one active job holds the state directory until its worker completes", asyn
     gateRevision,
     worker: async (job) => {
       if (id === "first-active") await workerWait;
-      return { candidateSha: job.baseSha, summary: "Candidate is ready." };
+      return {
+        candidateSha: job.baseSha,
+        summary: "Candidate is ready.",
+        report: simulatedWorkerReport("The candidate adapter returns the scoped SHA."),
+      };
     },
     reviewer: async ({ worker }) => ({
       verdict: "pass",
