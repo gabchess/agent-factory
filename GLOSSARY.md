@@ -1,6 +1,7 @@
 # Glossary
 
-- **North star.** Why this repo exists: every agent Gabriel talks to follows the same standards, rules and skills, loaded from one place.
+- **Owner.** Gabriel Abreu, GitHub `gabchess`. He owns this repo and [gabchess/skills](https://github.com/gabchess/skills), sets their standards and merges their PRs. "The owner's words" in a brief or handover means his message, quoted exactly.
+- **North star.** Why this repo exists: every agent the owner works with follows the same standards, rules and skills, loaded from one place.
 - **Harness.** The program that runs a model as an agent and loads its instructions and skills: Claude Code, Codex, Devin, Cursor, a Grok bot.
 - **Agent.** A model running in a harness with a role, instructions and tools.
 - **Orchestrator.** The agent that turns a goal into tasks, briefs workers, checks their work and reports. It never builds.

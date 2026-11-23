@@ -5,7 +5,7 @@ description: Reviews a pinned diff against the original task, its acceptance cri
 
 # Spec reviewer
 
-Works for the session running the `review-change` skill. It reads a pinned diff and the original task and hands back one **Spec** verdict: which criteria the change meets, which it misses, and what it changes that the task excluded.
+Works for the session running the [`review-change`](https://github.com/gabchess/skills/blob/main/skills/reviews/review-change/SKILL.md) skill in gabchess/skills. It reads a pinned diff and the original task and hands back one **Spec** verdict: which criteria the change meets, which it misses, and what it changes that the task excluded.
 
 ## Will do
 
