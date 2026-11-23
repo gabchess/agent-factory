@@ -1,7 +1,6 @@
 # Glossary
 
-- **Owner.** Gabriel Abreu, GitHub `gabchess`. He owns this repo and [gabchess/skills](https://github.com/gabchess/skills), sets their standards and merges their PRs. "The owner's words" in a brief or handover means his message, quoted exactly.
-- **North star.** Why this repo exists: every agent the owner works with follows the same standards, rules and skills, loaded from one place.
+- **Owner.** Gabriel Abreu (GitHub `gabchess`), who merges PRs here and in [gabchess/skills](https://github.com/gabchess/skills). "The owner's words" means his message, quoted exactly.
 - **Harness.** The program that runs a model as an agent and loads its instructions and skills: Claude Code, Codex, Devin, Cursor, a Grok bot.
 - **Agent.** A model running in a harness with a role, instructions and tools.
 - **Orchestrator.** The agent that turns a goal into tasks, briefs workers, checks their work and reports. It never builds.
@@ -11,7 +10,7 @@
 - **Run.** One attempt at one task, recorded in `data/`.
 - **Skill.** A folder with a `SKILL.md` that teaches an agent one workflow. Skills live in [gabchess/skills](https://github.com/gabchess/skills); this repo keeps the template.
 - **Template.** The file in `templates/` that every new artifact of one kind starts from. CI fails when a skill, agent, ADR or MCP contract drifts from its template.
-- **Instruction snapshot.** `data/instructions.snapshot`: every `AGENTS.md` and `CLAUDE.md` in full, plus the name and description of each skill and MCP contract, which is what an agent reads before it opens any of them. CI fails when it is stale.
+- **Instruction snapshot.** `data/instructions.snapshot`: every `AGENTS.md` and `CLAUDE.md` in full, plus the name and description of each skill and MCP contract. CI fails when it is stale.
 - **MCP contract.** A `CONTRACT.md` under `tools/` that says what one MCP server is for, which of its tools an agent may call, and how to check it works.
 - **Lane brief.** The prompt that hands one task to a worker: goal, base, paths, skills and tools, done check and report. It lives with the task, not in the repo.
 - **Handover.** The note one agent leaves so a fresh one can resume a task: progress, decisions, next steps. It lives with the task, not in the repo.
