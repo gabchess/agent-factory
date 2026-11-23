@@ -23,7 +23,7 @@ The checks:
 - `instruction-snapshot.js`: fails when `data/instructions.snapshot` no longer matches what an agent loads here: every `AGENTS.md` and `CLAUDE.md`, the skill index and the tool contracts.
 - `no-dashes.js`: fails on em and en dashes in any text file, and on a hyphen used as a dash in Markdown prose.
 - `no-linear-links.js`: fails on a link to Linear in any file. Linear links here, never the reverse.
-- `run-records.js`: fails on a row of `data/runs.jsonl` that is not a JSON object, lacks a key or type the `orchestrate-task` gate writes, skips or repeats an attempt, follows a run that already ended, goes over its loop cap, or is blocked without an ask.
+- `run-records.js`: fails on a row of `data/runs.jsonl` that is not a JSON object, lacks a key or type the `orchestrate-task` gate writes, skips or repeats an attempt, follows a run that already ended, goes over its loop cap, fails a second time in a row or at its loop cap without being blocked, has an impossible or non ISO 8601 time, or is blocked without an ask.
 - `skill-names.js`: fails when two skills share a name or a folder name, since harnesses link skills flat by name.
 - `template-drift.js`: fails when a skill, agent, ADR or MCP contract loses a frontmatter key or a section its template in `templates/` has, or puts the sections out of order.
 

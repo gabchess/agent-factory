@@ -10,3 +10,4 @@ not json
 {"at": "2026-11-23T16:00:00.000Z", "run": "g", "task": "t", "attempt": 2, "loop_cap": 3, "verdict": "fail", "status": "failed", "reason": "x", "missing": [], "unlisted": [], "ask": "", "dry_run": false}
 {"at": "2026-11-23T16:00:00.000Z", "run": "h", "task": "t", "attempt": 1, "loop_cap": 1, "verdict": "fail", "status": "failed", "reason": "x", "missing": [], "unlisted": [], "ask": "", "dry_run": false}
 {"at": "11/23/2026", "run": "i", "task": "t", "attempt": 1, "loop_cap": 3, "verdict": "pass", "status": "passed", "reason": "", "missing": [], "unlisted": [], "ask": "", "dry_run": false}
+{"at": "2026-02-31T16:00:00Z", "run": "j", "task": "t", "attempt": 1, "loop_cap": 3, "verdict": "pass", "status": "passed", "reason": "", "missing": [], "unlisted": [], "ask": "", "dry_run": false}

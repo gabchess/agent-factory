@@ -23,4 +23,5 @@ test("each malformed row fails at its line with the fix", () => {
   assert.ok(at(10).some((m) => /second failed attempt in a row must be blocked/.test(m)));
   assert.ok(at(11).some((m) => /failed attempt at the loop cap must be blocked/.test(m)));
   assert.ok(at(12).some((m) => /at must be an ISO 8601 time/.test(m)));
+  assert.ok(at(13).some((m) => /at must be an ISO 8601 time/.test(m)));
 });

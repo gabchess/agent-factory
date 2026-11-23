@@ -4,8 +4,16 @@ const STRING = (value) => typeof value === "string";
 const COUNT = (value) => Number.isInteger(value) && value >= 1;
 const NAMES = (value) => Array.isArray(value) && value.every(STRING);
 
+function ISO_TIME(value) {
+  const parts = STRING(value) && /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.exec(value);
+  if (!parts) return false;
+  const [year, month, day, hour, minute, second] = parts.slice(1, 7).map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCMonth() === month - 1 && date.getUTCDate() === day && hour < 24 && minute < 60 && second < 60;
+}
+
 const KEYS = {
-  at: [(value) => STRING(value) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.test(value), "an ISO 8601 time"],
+  at: [ISO_TIME, "an ISO 8601 time"],
   run: [(value) => STRING(value) && value.length > 0, "a run id"],
   task: [STRING, "a string"],
   attempt: [COUNT, "a whole number from 1"],
