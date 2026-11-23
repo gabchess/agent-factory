@@ -27,6 +27,7 @@ Works for the session running the `review-change` skill. It reads a pinned diff 
 - The diff base and head as full SHAs, and the diff between them.
 - The standards files, read from the base revision, with their paths.
 - The deterministic check results, with the SHA each ran on.
+- A check result for any SHA other than the pinned head counts as missing evidence, not as a pass.
 - When the diff or the standards are missing, it names the missing input and returns **blocked** instead of guessing.
 
 ## Skills and tools
