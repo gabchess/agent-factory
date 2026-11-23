@@ -4,6 +4,8 @@ import { isMarkdown, proseLines } from "./markdown.js";
 
 const REFERENCE = /^ {0,3}\[(?!\^)[^\]]+\]:\s*(?:<(?<angle>[^>]*)>|(?<bare>\S+))/dg;
 const EXTERNAL = /^([a-z][a-z0-9+.-]*:|#|\/\/)/i;
+const THIS_REPO_ON_MAIN = /^https:\/\/github\.com\/gabchess\/agent-factory\/(?:blob|tree)\/main\//i;
+const local = (target) => target.replace(THIS_REPO_ON_MAIN, "/");
 
 function decode(target) {
   try {
@@ -44,8 +46,8 @@ function deadLinks({ path, text }, contains) {
   return proseLines(text).flatMap(({ line, raw, prose }) =>
     links(prose, raw)
       .filter(({ inCode }) => !inCode)
-      .filter(({ target }) => !EXTERNAL.test(target))
-      .filter(({ target }) => !exists(resolve(path, target), contains))
+      .filter(({ target }) => !EXTERNAL.test(local(target)))
+      .filter(({ target }) => !exists(resolve(path, local(target)), contains))
       .map(({ target, column }) => ({ path, line, column, message: `dead link to \`${target}\`. Fix the path or remove the link.` })),
   );
 }
