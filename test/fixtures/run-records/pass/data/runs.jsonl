@@ -1,0 +1,3 @@
+{"at": "2026-11-23T16:00:00.000Z", "run": "r1", "task": "fix the flaky login test", "attempt": 1, "loop_cap": 3, "verdict": "fail", "status": "failed", "reason": "still flaky", "missing": [], "unlisted": [], "ask": "", "dry_run": false}
+{"at": "2026-11-23T16:00:00.000Z", "run": "r1", "task": "fix the flaky login test", "attempt": 2, "loop_cap": 3, "verdict": "fail", "status": "blocked", "reason": "still flaky", "missing": [], "unlisted": [], "ask": "Two failed attempts in a row.", "dry_run": false}
+{"at": "2026-11-23T16:00:00.000Z", "run": "r2", "task": "fix the flaky login test", "attempt": 1, "loop_cap": 3, "verdict": "pass", "status": "passed", "reason": "", "missing": [], "unlisted": [], "ask": "", "dry_run": false}
