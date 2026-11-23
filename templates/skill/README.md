@@ -19,8 +19,8 @@ Extend an existing skill when the job is the same. Start a new one when merging 
 - `name` is lowercase letters, digits and hyphens, at most 64 characters, the same as the folder, and unique across the repo.
 - `description` says what the skill is, then when to use it, in one to three sentences and at most 1024 characters. Lead with the words a person would type, one branch per trigger.
 - Every step is one action with a "Done when" an agent can verify without asking.
-- Every step names what it uses: tool, MCP server, skill, command, or file to read or fetch.
-- Write for an agent with none of your memory. Name a person only with who they are. Define every project name and term, or point to its definition.
+- Every step names what it uses: tool, MCP server, skill, command, or file to read or fetch, and the service or tech behind it when the agent must know it to act.
+- Write for an agent with none of your memory. Name a person only with who they are. Define every project name, path and term on first use, or point to its definition.
 - Every line says what to do, use or check, or what is allowed. Cut the rest.
 - Write a setup-dependent preference as a condition with a fallback: "When `<tool>` is available, use it. Otherwise use what the harness offers."
 - A skill for one person's preferences names the person in its `name` and first line, as in `<person>-voice`.
