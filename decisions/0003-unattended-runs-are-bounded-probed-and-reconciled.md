@@ -7,7 +7,7 @@ Every unattended or long agent run in any harness follows six steps. Step 5 runs
 No person watches an unattended run, so its limits and checks exist before it starts, and its record grows as it runs:
 
 1. Bound the run before it starts. Write down what done means, how to check the result, what the run may touch, what stops it, and where the result goes. Spend follows [0002](0002-spend-is-capped-per-approval-before-money-moves.md). When a newer instruction narrows an approval, stop the run and then ask.
-2. Run a free probe before the first paid attempt. That $0 probe tests the real sandbox, network allowlist, credentials, and instruction loading. Any probe failure blocks the paid run until someone explains it.
+2. Run a free probe before the first paid attempt. That $0 probe tests the real sandbox, network allowlist, credentials, and instruction loading. Any probe failure blocks the paid run until the cause is fixed and the probe passes again.
 3. Escalate in phases from a small run to a larger one, and then to the full run. Run each phase once under a new run id, and compare its cost with the estimate before starting the next phase.
 4. Let the verifier judge the run under [0001](0001-verification-and-reporting-keep-independent-evidence.md). The agent's own report is a claim.
 5. Write attempts, transcripts, artifacts, and charges to disk during the run, and never edit them afterward. A crash or a new session recovers state from these files, and so does a context compaction.
