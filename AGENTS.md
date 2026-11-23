@@ -46,6 +46,7 @@ Building:
 - When you create a skill, read [`templates/skill/README.md`](https://github.com/gabchess/agent-factory/blob/main/templates/skill/README.md), copy [`templates/skill/SKILL.md`](https://github.com/gabchess/agent-factory/blob/main/templates/skill/SKILL.md) into `skills/<bucket>/<name>/` in [gabchess/skills](https://github.com/gabchess/skills), and follow that repo's `AGENTS.md`.
 - When you create an agent, ADR, MCP contract, lane brief or handover, read [`templates/README.md`](https://github.com/gabchess/agent-factory/blob/main/templates/README.md).
 - When you add, cut or rewrite a line in any `AGENTS.md`, `CLAUDE.md`, rule or skill, read the "Is it a skill" table in [`templates/skill/README.md`](https://github.com/gabchess/agent-factory/blob/main/templates/skill/README.md). Turn a rule a script can enforce into a check.
+- When you add a rule, a line to an `AGENTS.md` or skill, an ADR or a check, or carry a line over from an old source, read [ADR 0007](https://github.com/gabchess/agent-factory/blob/main/decisions/0007-a-line-lands-only-when-it-passes-the-survival-test.md) and apply its survival test.
 - When you need proof that an instruction line changes what an agent does, read [the crash-lab skill](https://github.com/gabchess/skills/blob/main/skills/quality/crash-lab/SKILL.md), or [agentic-dead-rules-detector](https://github.com/gabchess/skills/blob/main/skills/quality/agentic-dead-rules-detector/SKILL.md) when Docker is not available.
 
 Running and reviewing work:
