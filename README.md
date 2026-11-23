@@ -28,10 +28,12 @@ Orchestrator → control the flow → structure outputs → execute actions → 
 
 ## Checks
 
-Node 22 or later. No dependencies.
+Node 22 or later. Install dependencies with `npm ci`.
 
 ```sh
 npm test       # the checks' own tests
 npm run check  # the checks against this repo
 npm run check:title -- "<title>"  # a PR title against decisions/0005
 ```
+
+The Mastra workshop and its pinned gate setup are in [workshop/](workshop/README.md).

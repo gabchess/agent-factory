@@ -4,9 +4,19 @@
   "type": "module",
   "engines": { "node": ">=22" },
   "scripts": {
-    "test": "node --test \"test/**/*.test.js\"",
-    "check": "node checks/run.js",
+    "test": "node --import tsx --test \"test/**/*.test.js\"",
+    "typecheck": "tsc --project tsconfig.workshop.json",
+    "check": "npm run typecheck && node checks/run.js",
     "check:title": "node checks/run-pr-title.js",
     "snapshot": "node checks/write-snapshot.js"
+  },
+  "dependencies": {
+    "@mastra/core": "1.85.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
   }
 }
