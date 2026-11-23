@@ -11,6 +11,7 @@ Orchestrator → control the flow → structure outputs → execute actions → 
 ## Read when needed
 
 - When you write prose a person will read, read [the gabe-voice skill](https://github.com/gabchess/skills/blob/main/skills/disciplines/gabe-voice/SKILL.md) in gabchess/skills.
+- When you connect a harness to this repo, or move one off an old rules source, use [the join-factory skill](https://github.com/gabchess/skills/blob/main/skills/harnesses/join-factory/SKILL.md) in gabchess/skills.
 - When you meet a term you do not know, or name a new concept, read `GLOSSARY.md`.
 - When you add a file to a top-level folder, read that folder's `README.md`.
 - When you add or change a check, read `checks/README.md`.
