@@ -9,6 +9,7 @@ function rowFailure(fields, seen, line) {
   if (fields.length !== COLUMNS)
     return `The row has ${fields.length} columns, not ${COLUMNS}. Separate source, path, verdict, reason and ticket with tabs.`;
   const [source, path, verdict, reason, ticket] = fields;
+  if (!source.trim() || !path.trim()) return "Every row names its source and the file or ticket it judges.";
   const key = `${source} ${path}`;
   if (seen.has(key)) return `${key} already has a verdict on line ${seen.get(key)}. Keep one row per file.`;
   seen.set(key, line);
@@ -21,7 +22,7 @@ function rowFailure(fields, seen, line) {
 }
 
 function tableFailures({ path, text }) {
-  const [header, ...rows] = text.replace(/\n$/, "").split("\n");
+  const [header, ...rows] = text.replace(/\r\n/g, "\n").replace(/\n$/, "").split("\n");
   if (header !== HEADER)
     return [{ path, line: 1, message: "The header must be source, path, verdict, reason, ticket, separated by tabs." }];
   const seen = new Map();
