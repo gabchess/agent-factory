@@ -7,12 +7,18 @@
 - **Worker.** A fresh agent that does one task from one brief.
 - **Task.** One unit of work with a trigger, a done check and one writer.
 - **Trigger.** What starts a run: a ticket state, a schedule, a webhook or a person.
-- **Run.** One attempt at one task, recorded in `data/`.
+- **Run.** One task from its trigger until it ends passed or blocked. A run never waits for a person: a blocked run files its ask and ends, and the answer starts a new run.
+- **Attempt.** One worker's try within a run, gated and recorded as one row of `data/runs.jsonl`.
+- **Run record.** `data/runs.jsonl`, one JSON row per attempt, written by the `orchestrate-task` gate script. Rows are appended, never edited.
 - **Skill.** A folder with a `SKILL.md` that teaches an agent one workflow. Skills live in [gabchess/skills](https://github.com/gabchess/skills); this repo keeps the template.
 - **Template.** The file in `templates/` that every new artifact of one kind starts from. CI fails when a skill, agent, ADR or MCP contract drifts from its template.
 - **Instruction snapshot.** `data/instructions.snapshot`: every `AGENTS.md` and `CLAUDE.md` in full, plus the name and description of each skill and MCP contract. CI fails when it is stale.
 - **MCP contract.** A `CONTRACT.md` under `tools/` that says what one MCP server is for, which of its tools an agent may call, and how to check it works.
-- **Lane brief.** The prompt that hands one task to a worker: goal, base, paths, skills and tools, done check and report. It lives with the task, not in the repo.
+- **Lane brief.** The prompt that hands one task to a worker: goal, base, paths, skills and tools, limits, done check and report. It lives with the task, not in the repo.
+- **Loop cap.** The most attempts a brief allows one run. The attempt that reaches it without a pass ends the run blocked.
+- **Stop condition.** A named situation in a brief, under "Stop when", in which the worker stops and files an ask instead of working around it.
+- **Worker report.** What a worker hands back, filled from `templates/prompt/worker-report.md`: result, what it loaded and used, what it could not verify, and its ask.
+- **Ask.** The one decision or input a blocked run needs from a person, posted where the task came from.
 - **Handover.** The note one agent leaves so a fresh one can resume a task: progress, decisions, next steps. It lives with the task, not in the repo.
 - **Check.** A script CI runs that fails on a broken rule and says how to fix it.
 - **Pointer.** A line in an `AGENTS.md` that says when to read another file: "When you X, read Y". CI fails on a pointer to a missing file or one with no "When".

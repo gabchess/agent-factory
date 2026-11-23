@@ -7,10 +7,11 @@ import * as deadLinks from "./dead-links.js";
 import * as instructionSnapshot from "./instruction-snapshot.js";
 import * as noDashes from "./no-dashes.js";
 import * as noLinearLinks from "./no-linear-links.js";
+import * as runRecords from "./run-records.js";
 import * as skillNames from "./skill-names.js";
 import * as templateDrift from "./template-drift.js";
 
-const CHECKS = [adrLength, adrNames, auditVerdicts, agentsPointers, deadLinks, instructionSnapshot, noDashes, noLinearLinks, skillNames, templateDrift];
+const CHECKS = [adrLength, adrNames, auditVerdicts, agentsPointers, deadLinks, instructionSnapshot, noDashes, noLinearLinks, runRecords, skillNames, templateDrift];
 
 const format = ({ path, line, column, message }) => `${path}:${line}${column ? `:${column}` : ""}: ${message}`;
 
