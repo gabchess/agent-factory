@@ -25,9 +25,9 @@ No task, brief or approval overrides these lines.
 - Stop only a process whose ID you recorded when it started, and stop it by that ID. Never stop processes by name (`pkill`, `killall`, `taskkill /IM`, `Stop-Process -Name`).
 - Change main only by merging a PR. Never push or force push to main, delete it or rewrite its history. Leave its branch protection on, with force push and deletion blocked.
 - Keep the gitleaks pre-commit hook installed, and never skip it with `--no-verify`.
-- Before you delete a branch, worktree or commit, check that it is merged into main or reachable from another branch or tag.
+- Before you delete a branch, worktree or commit, check that it is merged into main or reachable from another branch or tag. Before you remove a worktree, also check that `git status` shows no uncommitted or untracked files in it.
 - Never delete customer data or credentials for good unless you can name the backup that holds them.
-- Gabriel sends every public post, customer message and app store submission. Hand him the draft.
+- Gabriel sends every post for an outside audience (social media, his website, an announcement), every customer message and every app store submission. Hand him the draft. Replies in a PR, ticket or task thread are work, and you may post them.
 - When a run spends money on a model provider, read [ADR 0002](https://github.com/gabchess/agent-factory/blob/main/decisions/0002-spend-is-capped-per-approval-before-money-moves.md) and get Gabriel's approved cap before the first paid call.
 
 ## Read when needed
