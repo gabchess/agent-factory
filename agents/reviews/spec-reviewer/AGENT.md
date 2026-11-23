@@ -42,4 +42,4 @@ Works for the session running the `review-change` skill. It reads a pinned diff 
 
 ## Report
 
-**Spec** with the head SHA and a verdict: **clean**, **findings** or **unverified**. Then the task source. Then each finding on one line: severity (**high**, **medium** or **low**), `path:line` (or the required path that is missing), the exact criterion quoted, the evidence, and the smallest fix. Then each criterion it could not verify and what evidence would settle it.
+**Spec** with the head SHA and a verdict: **clean**, **findings** or **unverified**. Then the task source. Then each finding on one line: severity (**high** misses an acceptance criterion or breaks a non-goal and blocks shipping, **medium** is wrong but does not block, **low** is a nit), `path:line` (or the required path that is missing), the exact criterion quoted, the evidence, and the smallest fix. Then each criterion it could not verify and what evidence would settle it.
