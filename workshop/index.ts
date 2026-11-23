@@ -172,18 +172,35 @@ async function runGate(input: z.infer<typeof ReviewStepOutputSchema>): Promise<{
   ];
   if (!reviewPassed) args.push("--reason", reason);
 
-  let stdout: string;
-  let exitCode: number;
+  let stdout = "";
+  let stderr = "";
+  let exitCode: number | null = null;
+  let processError: { code: string | number | null; message: string } | null = null;
+  let executionError: unknown;
   try {
     const result = await execFileAsync(process.execPath, args, { maxBuffer: 1024 * 1024 });
     stdout = result.stdout;
+    stderr = result.stderr;
     exitCode = 0;
   } catch (error) {
-    const failure = error as NodeJS.ErrnoException & { stdout?: string; code?: number };
-    if (![2, 3].includes(failure.code ?? -1)) throw error;
-    stdout = failure.stdout ?? "";
-    exitCode = failure.code!;
+    const failure = error as {
+      stdout?: string; stderr?: string; code?: string | number; message?: string;
+    };
+    stdout = typeof failure.stdout === "string" ? failure.stdout : "";
+    stderr = typeof failure.stderr === "string" ? failure.stderr : "";
+    exitCode = typeof failure.code === "number" ? failure.code : null;
+    processError = {
+      code: failure.code ?? null,
+      message: failure.message ?? String(error),
+    };
+    executionError = error;
   }
+  await writeFile(
+    path.join(input.stateDirectory, `${input.executionId}.gate-process.json`),
+    JSON.stringify({ executionId: input.executionId, stdout, stderr, exitCode, processError }) + "\n",
+    { flag: "wx" },
+  );
+  if (executionError && exitCode !== 2 && exitCode !== 3) throw executionError;
   const row = GateRowSchema.parse(JSON.parse(stdout.trim()));
   if ((row.status === "passed" && exitCode !== 0) ||
       (row.status === "failed" && exitCode !== 2) ||

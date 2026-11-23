@@ -121,6 +121,13 @@ test("a scoped job returns the real gate pass with independent worker and review
     );
     assert.equal(execution.status, "passed");
     assert.equal(execution.dryRun, true);
+    const evidence = JSON.parse(
+      await readFile(path.join(stateDirectory, "dry-run-passed-job.gate-process.json"), "utf8"),
+    );
+    assert.equal(evidence.exitCode, 0);
+    assert.equal(evidence.stderr, "");
+    assert.equal(evidence.processError, null);
+    assert.equal(JSON.parse(evidence.stdout).status, "passed");
   } finally {
     await rm(stateDirectory, { recursive: true, force: true });
   }
@@ -185,6 +192,71 @@ test("the gate sees missing worker report declarations instead of wrapper attest
       await readFile(path.join(stateDirectory, "dry-run-report-provenance.report.md"), "utf8"),
       report,
     );
+  } finally {
+    await rm(stateDirectory, { recursive: true, force: true });
+  }
+});
+
+test("a gate process failure leaves its raw output and exit result available", async () => {
+  const { stateDirectory, briefPath } = await createTestDirectory("workshop-gate-process-");
+  try {
+    await assert.rejects(
+      runWorkshopJob({
+        job: {
+          id: "gate-process-failure",
+          repository: "gabchess/agent-factory",
+          baseSha,
+          paths: ["workshop/"],
+        },
+        stateDirectory,
+        briefPath,
+        gatePath,
+        gateRevision,
+        worker: async (job) => ({
+          candidateSha: job.baseSha,
+          summary: "Controlled fixture supplies a malformed worker report.",
+          report: [
+            "# Worker report: Route one simulated job through Mastra and the existing gate",
+            "",
+            "## Result",
+            "",
+            "PARTIAL: Simulation evidence from a controlled worker adapter fixture.",
+            "",
+            "## Loaded",
+            "",
+            "- Load: `implement`",
+            "- Load: `tdd`",
+            "- Load: `codebase-design`",
+            "- Load: `mastra`",
+            "- Load: `gabe-voice`",
+            "- Load: `package-management`",
+            "- Use: `ReadFile`",
+            "- Use: `ShellExec`",
+            "- Use: `apply_patch`",
+            "",
+            "## Could not verify",
+            "",
+            "- The fixture omits the required Ask section.",
+            "",
+          ].join("\n"),
+        }),
+        reviewer: async ({ worker }) => ({
+          verdict: "pass",
+          reviewedSha: worker.candidateSha,
+          findings: [],
+        }),
+      }),
+      /workflow ended with status failed/,
+    );
+
+    const evidence = JSON.parse(
+      await readFile(path.join(stateDirectory, "dry-run-gate-process-failure.gate-process.json"), "utf8"),
+    );
+    assert.equal(evidence.executionId, "dry-run-gate-process-failure");
+    assert.equal(evidence.exitCode, 1);
+    assert.equal(evidence.stdout, "");
+    assert.match(evidence.stderr, /report has no "## Ask"/);
+    assert.match(evidence.processError.message, /Command failed/);
   } finally {
     await rm(stateDirectory, { recursive: true, force: true });
   }
