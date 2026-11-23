@@ -6,3 +6,4 @@ A malformed escape is dead too: [bad](50%zz.md).
 [a [nested] label](docs/gone.md) is dead.
 [![logo](missing.png)](docs/guide.md) hides a dead image.
 [slash](docs%2Fguide.md) escapes a slash.
+A [main link](https://github.com/gabchess/agent-factory/blob/main/docs/gone.md) to this repo is dead.

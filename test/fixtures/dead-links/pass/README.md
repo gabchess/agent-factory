@@ -40,3 +40,5 @@ Two backslashes \\\\`[x](nowhere.md)` keep the code.
 A [self link](<>) and a [self reference][self] resolve.
 
 [self]: <>
+
+A [main link](https://github.com/gabchess/agent-factory/blob/main/docs/guide.md) and a [main folder](https://github.com/gabchess/agent-factory/tree/main/docs) to this repo resolve.
