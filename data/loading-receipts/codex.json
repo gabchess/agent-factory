@@ -1,0 +1,18 @@
+{
+  "probe": "loading-probe",
+  "harness": "Codex",
+  "version": "0.171.0",
+  "date": "2026-11-23",
+  "evidence": "first request captured by capture-api.mjs (codex exec, custom provider, fake key, temp CODEX_HOME)",
+  "requests": 1,
+  "loaded": {
+    "AGENTS.md": true,
+    "CLAUDE.md": false,
+    "skill parts-catalog (index)": true,
+    "skill parts-catalog (body)": false
+  },
+  "rule": "Every length in parts.md keeps its unit of measure: write 40 mm, never a bare 40.",
+  "task": "Add the part described in spec.txt to the table in parts.md. Change nothing else.",
+  "followed": "not run",
+  "delivered": null
+}
