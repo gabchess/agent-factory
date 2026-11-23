@@ -4,12 +4,12 @@ Every PR is either docs-only or code. A docs-only PR merges once the repo's chec
 
 ## Rules
 
-- A docs-only PR changes only Markdown that agents or maintainers read, such as rules, ADRs, skills and READMEs, and nothing a product or public page shows. Every other PR is a code PR, including one that changes text a product or public page shows.
+- A docs-only PR changes only Markdown that agents or maintainers read, such as rules, ADRs, skills and READMEs, plus files the repo regenerates from them, such as an instruction snapshot, and nothing a product or public page shows. Every other PR is a code PR, including one that changes text a product or public page shows.
 - Before you open a PR, run the repo's checks on the head and quote their last lines in the PR.
 - The verdict's first line reads `APPROVE <full head SHA>` or `REQUEST CHANGES <full head SHA>`. The reviewer runs the repo's checks on that head before writing it.
 - The author never writes the verdict on its own change.
 - A new head voids every verdict on the old one. Review the new head again.
-- Merge with the head pinned to the approved SHA, so the merge fails when a commit landed after the verdict.
+- Merge a code PR with the head pinned to the approved SHA, so the merge fails when a commit landed after the verdict.
 - When round 2 of a review names a new form of the flaw round 1 named, the fix deletes the carrier: the field, text path or type that lets the bad value through. Moving or merging a filter is still a patch. The fix may land in the same PR.
 - A test that checks a guard covers a set takes the set from the real producer, such as the tool's own output. Never take it from the code under test or a hand-typed list.
 - A review from a model family other than the author's is optional and never a merge condition. Its finding blocks the merge only when it shows a bug.
