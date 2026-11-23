@@ -1,6 +1,6 @@
 # agent-factory
 
-The one source of truth for the rules, skills, agents, decisions and checks that every agent Gabriel works with follows: Claude Code, Codex, Devin, Cursor and the Grok bots.
+The one source of truth for the rules, skills, agents, decisions and checks that every agent working for Gabriel Abreu (GitHub `gabchess`, the owner of this repo) follows, whatever harness runs it: Claude Code, Codex, Devin, Cursor or a Grok bot. Write everything here for an agent that has never met him and has none of his chat history.
 
 ## How it works
 
@@ -10,7 +10,7 @@ Orchestrator → control the flow → structure outputs → execute actions → 
 2. **Control the flow.** It defines success first: what good looks like, and the checks that prove it.
 3. **Structure outputs.** Every artifact starts from its template in `templates/`.
 4. **Execute actions.** It calls the right agent with the right model, and a brief that names the skills and tools the task needs. Then it watches that the agent uses them and does the job well.
-5. **Remember context.** Plans and tickets live in Linear. Rules, decisions and run records live here, in git.
+5. **Remember context.** Plans and tickets live in the owner's Linear workspace. When your task has a ticket, the person who gave you the task names it. Rules, decisions and run records live here, in git.
 6. **Retrieve data.** Agents load a small `AGENTS.md` and follow its pointers to the rest, only when the task needs it.
 7. **Measure quality.** A worker saying "done" and green CI are claims. Only an independent review of one exact commit counts as a verdict.
 

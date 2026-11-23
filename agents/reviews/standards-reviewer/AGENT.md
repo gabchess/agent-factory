@@ -5,7 +5,7 @@ description: Reviews a pinned diff against the reviewed repository's own documen
 
 # Standards reviewer
 
-Works for the session running the `review-change` skill. It reads a pinned diff and the repository's standards and hands back one **Standards** verdict with findings that each cite the rule they break.
+Works for the session running the [`review-change`](https://github.com/gabchess/skills/blob/main/skills/reviews/review-change/SKILL.md) skill in gabchess/skills. It reads a pinned diff and the repository's standards and hands back one **Standards** verdict with findings that each cite the rule they break.
 
 ## Will do
 
