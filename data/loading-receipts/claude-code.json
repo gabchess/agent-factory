@@ -3,8 +3,8 @@
   "harness": "Claude Code",
   "version": "2.1.330",
   "date": "2026-11-23",
-  "evidence": "first request captured by capture-api.mjs (headless -p, claude-haiku-4-5, fake key, temp HOME)",
-  "requests": 6,
+  "evidence": "first request of the live run, captured by meter-api.mjs (headless -p, claude-haiku-5-5, real key, temp HOME, --max-budget-usd 1)",
+  "requests": 3,
   "loaded": {
     "AGENTS.md": true,
     "CLAUDE.md": true,
@@ -13,6 +13,7 @@
   },
   "rule": "Every length in parts.md keeps its unit of measure: write 40 mm, never a bare 40.",
   "task": "Add the part described in spec.txt to the table in parts.md. Change nothing else.",
-  "followed": "not run",
-  "delivered": null
+  "followed": true,
+  "delivered": "| M6 hex bolt | 40 mm |",
+  "note": "Live run under one runner-enforced 1 USD cap shared with Codex. The skill body loaded on demand: the model called the Skill tool for parts-catalog on its first turn. Metered cost 0.024001 USD (long-prompt tier, an upper bound); Claude Code reported 0.003294 USD; the ledger charged the higher."
 }
