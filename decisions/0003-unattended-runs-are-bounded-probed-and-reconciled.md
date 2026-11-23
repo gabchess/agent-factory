@@ -11,7 +11,7 @@ No person watches an unattended run, so its limits and checks exist before it st
 3. Escalate in phases from a small run to a larger one, and then to the full run. Run each phase once under a new run id, and compare its cost with the estimate before starting the next phase.
 4. Let the verifier judge the run under [0001](0001-verification-and-reporting-keep-independent-evidence.md). The agent's own report is a claim.
 5. Write attempts, transcripts, artifacts, and charges to disk during the run, and never edit them afterward. A crash or a new session recovers state from these files, and so does a context compaction.
-6. Reconcile the reported total against the provider console for the same time window after the run ends. An unexplained gap blocks the next paid run. Turn off live execution when the approved run ends.
+6. Reconcile the tokens and the charges the run recorded against the provider console for the same time window after the run ends. An unexplained gap blocks the next paid run. Turn off live execution when the approved run ends.
 
 ## Evidence
 
