@@ -2,7 +2,7 @@
 
 ## Result
 
-<The result first with its link: a PR, a commit, a file. Your claim only; the orchestrator gets the verdict from someone else.>
+<DELIVERED, PARTIAL or BLOCKED, then the result with its link: a PR, a commit, a file. Your claim only; the orchestrator gets the verdict from someone else.>
 
 ## Loaded
 
