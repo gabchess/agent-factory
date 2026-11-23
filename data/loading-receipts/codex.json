@@ -3,16 +3,17 @@
   "harness": "Codex",
   "version": "0.171.0",
   "date": "2026-11-23",
-  "evidence": "first request captured by capture-api.mjs (codex exec, custom provider, fake key, temp CODEX_HOME)",
-  "requests": 1,
+  "evidence": "every request of the live run, captured by meter-api.mjs (codex exec, gpt-5-mini, real key, temp CODEX_HOME, workspace-write)",
+  "requests": 5,
   "loaded": {
     "AGENTS.md": true,
     "CLAUDE.md": false,
     "skill parts-catalog (index)": true,
-    "skill parts-catalog (body)": false
+    "skill parts-catalog (body)": true
   },
   "rule": "Every length in parts.md keeps its unit of measure: write 40 mm, never a bare 40.",
   "task": "Add the part described in spec.txt to the table in parts.md. Change nothing else.",
-  "followed": "not run",
-  "delivered": null
+  "followed": true,
+  "delivered": "| M6 hex bolt | 40 mm |",
+  "note": "Live run under one runner-enforced 1 USD cap shared with Claude Code. AGENTS.md and the skill index arrived at startup, in the first request. The skill body loaded on demand: the agent read .agents/skills/parts-catalog/SKILL.md with sed before editing. A first attempt on gpt-5-nano made no edit: Codex 0.171.0 has no model metadata for it and every shell call came back empty, so the run was repeated on gpt-5-mini. Metered cost 0.009534 USD for this run and 0.001442 USD for the gpt-5-nano attempt; Codex reports no cost. Ledger total for both harnesses 0.034977 USD."
 }
