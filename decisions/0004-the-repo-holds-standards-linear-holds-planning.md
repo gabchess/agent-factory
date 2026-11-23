@@ -11,7 +11,7 @@ A rule with one home stays consistent. When a rule lives in five homes, someone 
 3. Any agent in any harness can read this repo from a local clone. Some harnesses lack access to Linear, and an unreachable link leaves the agent without context.
 4. Linear tickets can link to any file, commit or PR here to cite their source.
 
-`checks/no-linear-links.js` fails CI on any link to Linear in this repo. The cost: context a ticket already holds gets written out again here.
+`checks/no-linear-links.js` fails CI on links to the Linear app domain. It does not catch other Linear domains. The cost: context a ticket already holds gets written out again here.
 
 ## Evidence
 
