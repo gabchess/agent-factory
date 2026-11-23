@@ -1,6 +1,6 @@
 # Unattended runs are bounded, probed and reconciled
 
-Every unattended or long agent run in any harness follows six steps. The orchestrator checks each step before the next one starts.
+Every unattended or long agent run in any harness follows six steps. Step 5 runs from the first attempt to the end. The orchestrator checks every other step before it lets the next one start.
 
 ## Why
 
