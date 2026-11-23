@@ -20,5 +20,5 @@
 - **ADR.** A decision record in `decisions/`: the decision, why, and what result backs it.
 - **Verdict.** An independent reviewer's pass or fail on one exact commit.
 - **Claim.** What a worker says about its own result. A claim is recorded and never counts as a verdict.
-- **Approval.** Gabriel's go for one piece of work that spends money, with the most it may spend. The runner enforces it before each paid attempt.
+- **Approval.** Gabriel's go for one piece of work that spends money, with the most its attempts may reserve. The runner checks it before each paid attempt starts, so an attempt already running can end above it (ADR 0002).
 - **Probe.** A run that costs nothing and tests the sandbox, network, credentials and instruction loading before the first paid attempt.
