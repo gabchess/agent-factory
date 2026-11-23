@@ -39,7 +39,7 @@ Running and reviewing work:
 Harnesses:
 
 - When you connect a harness to this repo, or move one off an old rules source, read [the join-factory skill](https://github.com/gabchess/skills/blob/main/skills/harnesses/join-factory/SKILL.md).
-- When you rely on a harness loading `AGENTS.md` or a skill, read [`data/README.md`](https://github.com/gabchess/agent-factory/blob/main/data/README.md) for its loading receipt.
+- When you rely on a harness loading `AGENTS.md` or a skill, read [`data/README.md`](https://github.com/gabchess/agent-factory/blob/main/data/README.md) for its loading receipt. When that harness has none, run [the loading-probe skill](https://github.com/gabchess/skills/blob/main/skills/quality/loading-probe/SKILL.md).
 
 Other work:
 
