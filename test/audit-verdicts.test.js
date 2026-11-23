@@ -24,6 +24,7 @@ test("a wrong header, an unknown verdict, a missing ticket or reason and a repea
     { path: file, line: 6, message: "old-repo a.md already has a verdict on line 2. Keep one row per file." },
     { path: file, line: 7, message: "The row has 3 columns, not 5. Separate source, path, verdict, reason and ticket with tabs." },
     { path: file, line: 8, message: "Every row names its source and the file or ticket it judges." },
+    { path: file, line: 9, message: "Every row names its source and the file or ticket it judges." },
   ]);
 });
 
