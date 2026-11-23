@@ -1,0 +1,10 @@
+Point AGENTS.md to the gabe-voice skill (#13)
+Merge pull request #8 from gabchess/devin/gab-806-writing-skill-pointer
+Revert "feat: add the PR title check"
+feature: add the PR title check
+Feat: add the PR title check
+fix(): skip binary files
+fix(Checks): skip binary files
+feat:add the PR title check
+feat:  add the PR title check
+docs: 

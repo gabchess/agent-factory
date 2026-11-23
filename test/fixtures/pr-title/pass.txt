@@ -1,0 +1,6 @@
+feat: add the PR title check
+fix(checks): skip binary files in no-dashes
+docs(decisions): correct a path in ADR 0005
+refactor(git-repo)!: list files from the index only
+revert: add the PR title check
+chore: Point AGENTS.md to the gabe-voice skill
