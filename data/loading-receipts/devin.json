@@ -1,0 +1,18 @@
+{
+  "probe": "loading-probe",
+  "harness": "Devin",
+  "version": "Devin, Normal mode, 2026-11-23",
+  "date": "2026-11-23",
+  "evidence": "fresh child session df8cd89005264ed1a1fa6ac8f3d18eb2 given only the task; context file is its self-report of the codewords the harness gave it",
+  "loaded": {
+    "AGENTS.md": true,
+    "CLAUDE.md": true,
+    "skill parts-catalog (index)": true,
+    "skill parts-catalog (body)": true
+  },
+  "rule": "Every length in parts.md keeps its unit of measure: write 40 mm, never a bare 40.",
+  "task": "Add the part described in spec.txt to the table in parts.md. Change nothing else.",
+  "followed": true,
+  "delivered": "| M6 hex bolt | 40 mm |",
+  "note": "AGENTS.md and CLAUDE.md were injected as always-on rules after the first command in the fixture folder. The skill index came back from the agent's own skill search with the fixture path, and the body on skill invoke, so Devin loads skills on demand. Transcript cross-check: the session opened only spec.txt and parts.md, never AGENTS.md, CLAUDE.md or SKILL.md. parts.md here is rebuilt from the row the session wrote, since its VM is separate."
+}
