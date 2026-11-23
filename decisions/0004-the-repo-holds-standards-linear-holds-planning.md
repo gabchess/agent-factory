@@ -15,7 +15,7 @@ A rule with one home stays consistent. When a rule lives in five homes, someone 
 
 ## Evidence
 
-- The old AgentOps stated its merge gate in five places, and they disagreed. gabchess/vault-agentops `20-ADRS/0001-autonomous-merge-policy.md` decision 1, its `20-ADRS/0051-agentops-v2-keep-what-caught-bugs.md` and gabchess/agent-rules `rules/pull-requests.md` line 1 said no status check gates a merge. gabchess/agent-rules `AGENTS.md` line 7 (commit `562fe19`) said "The `test` check must pass before merge", while its `.github/` holds only `dependabot.yml`.
+- The old AgentOps stated its merge gate in five places, and they disagreed. gabchess/vault-agentops `20-ADRS/0001-autonomous-merge-policy.md` decision 1, its `20-ADRS/0051-agentops-v2-keep-what-caught-bugs.md` section 3 and gabchess/agent-rules `rules/pull-requests.md` line 1 said no GitHub Actions check gates a merge. gabchess/agent-rules `AGENTS.md` line 7 (commit `562fe19`) said "The `test` check must pass before merge", while its `.github/` holds only `dependabot.yml`.
 - The vault's `README.md` rule 1 (commit `137b4c6`) still cites ADR 0014 for the night board, which ADR 0051 dropped.
 - The old AgentOps Linear project summary named "ADR 0023, Level 7" as its goal after ADR 0051 deleted ADR 0023.
 - Gabriel picked "Linear + repo" over "vault + repo" on 2026-11-21, recorded in revision 4 of the agent-factory design spec, which lives in Linear.
