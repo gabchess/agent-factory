@@ -5,7 +5,7 @@ const COUNT = (value) => Number.isInteger(value) && value >= 1;
 const NAMES = (value) => Array.isArray(value) && value.every(STRING);
 
 const KEYS = {
-  at: [(value) => STRING(value) && !Number.isNaN(Date.parse(value)), "an ISO 8601 time"],
+  at: [(value) => STRING(value) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.test(value), "an ISO 8601 time"],
   run: [(value) => STRING(value) && value.length > 0, "a run id"],
   task: [STRING, "a string"],
   attempt: [COUNT, "a whole number from 1"],
@@ -43,6 +43,8 @@ function sequence(row, runs) {
   if (last && last.status !== "failed") problems.push(`run ${row.run} already ended ${last.status} at attempt ${last.attempt}`);
   else if (row.attempt !== (last?.attempt ?? 0) + 1) problems.push(`attempt ${row.attempt} of run ${row.run} follows attempt ${last?.attempt ?? 0}`);
   if (row.attempt > row.loop_cap) problems.push(`attempt ${row.attempt} is over loop_cap ${row.loop_cap}`);
+  if (row.status === "failed" && last?.status === "failed") problems.push("a second failed attempt in a row must be blocked with an ask");
+  if (row.status === "failed" && row.attempt >= row.loop_cap) problems.push("a failed attempt at the loop cap must be blocked with an ask");
   if (row.status === "blocked" && !row.ask.trim()) problems.push("a blocked row needs an ask");
   if (row.status === "passed" && (row.verdict !== "pass" || row.missing.length || row.unlisted.length)) problems.push("a passed row needs a pass verdict and no missing or unlisted names");
   return problems;
