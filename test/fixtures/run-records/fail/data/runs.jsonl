@@ -1,0 +1,8 @@
+not json
+{"at": "2026-11-23T16:00:00.000Z", "run": "a", "task": "fix the flaky login test", "attempt": 1, "loop_cap": 3, "verdict": "pass", "status": "done", "reason": "", "missing": [], "unlisted": [], "ask": "", "dry_run": false}
+{"at": "2026-11-23T16:00:00.000Z", "run": "b", "task": "fix the flaky login test", "attempt": 1, "loop_cap": 3, "verdict": "fail", "status": "blocked", "reason": "", "missing": [], "unlisted": [], "ask": "", "dry_run": false}
+{"at": "2026-11-23T16:00:00.000Z", "run": "c", "task": "fix the flaky login test", "attempt": 2, "loop_cap": 3, "verdict": "pass", "status": "passed", "reason": "", "missing": [], "unlisted": [], "ask": "", "dry_run": false}
+{"at": "2026-11-23T16:00:00.000Z", "run": "d", "task": "fix the flaky login test", "attempt": 1, "loop_cap": 3, "verdict": "pass", "status": "passed", "reason": "", "missing": [], "unlisted": [], "ask": "", "dry_run": false}
+{"at": "2026-11-23T16:00:00.000Z", "run": "d", "task": "fix the flaky login test", "attempt": 2, "loop_cap": 3, "verdict": "pass", "status": "passed", "reason": "", "missing": [], "unlisted": [], "ask": "", "dry_run": false}
+{"at": "2026-11-23T16:00:00.000Z", "run": "e", "task": "fix the flaky login test", "attempt": 4, "loop_cap": 3, "verdict": "fail", "status": "failed", "reason": "", "missing": [], "unlisted": [], "ask": "", "dry_run": false}
+{"run": "f"}

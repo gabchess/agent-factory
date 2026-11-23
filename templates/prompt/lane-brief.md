@@ -16,7 +16,12 @@
 ## Skills and tools
 
 - Load: `<skill-name>` for <step>.
-- Use: `<tool contract>` with <read or write> access.
+- Use: `<tool or MCP server>` with <read or write> access.
+
+## Limits
+
+- Loop cap: <n> attempts.
+- Stop when: <a condition that needs a person, such as a path outside "May change" or a missing credential>.
 
 ## Done when
 
@@ -24,4 +29,4 @@
 
 ## Report
 
-Hand back the result first with its link, then which skills and instruction files you loaded, then what you could not verify.
+Fill the worker report template you were given with this brief and hand it back. List every skill you loaded and every tool you used, named exactly as above.
