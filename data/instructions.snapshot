@@ -12,9 +12,23 @@ These rules hold for every agent working for Gabriel Abreu (GitHub `gabchess`), 
 
 - This repo is the source of truth. Linear may link to any repo. No repo links to Linear.
 - No em or en dashes anywhere, and no hyphen used as a dash in Markdown prose, except in `test/fixtures/`, which holds the failing examples for the checks. Rewrite the sentence with a comma, colon, period or parentheses. Write ranges as "44 to 51".
-- One PR, one outcome. Never push to main. Open a PR; the owner, Gabriel (`gabchess`), merges it, unless he approved you merging that PR.
+- One PR, one outcome. Open a PR; the owner, Gabriel (`gabchess`), merges it, unless he approved you merging that PR.
 - Every line in a repo says what to do, use or check. Background and history go in the Linear ticket. ADRs in `decisions/` keep the context and reason their template asks for.
 - Skills live in [gabchess/skills](https://github.com/gabchess/skills). When a skill named below is linked into your harness, load it by name. Otherwise read it at its link.
+
+## Safety floor
+
+No task, brief or approval overrides these lines.
+
+- Never commit, paste or log a secret (a key, token, password or credential file). Pass a key to a command by the name of its environment variable, never by its value.
+- Never run a command that prints credentials: `git remote -v`, `git config --list`, `env`, `printenv` or `set` with no arguments, or a read of a credential file such as `.git/config` or `.env`.
+- Stop only a process whose ID you recorded when it started, and stop it by that ID. Never stop processes by name (`pkill`, `killall`, `taskkill /IM`, `Stop-Process -Name`).
+- Change main only by merging a PR. Never push or force push to main, delete it or rewrite its history. Leave its branch protection on, with force push and deletion blocked.
+- Keep the gitleaks pre-commit hook installed, and never skip it with `--no-verify`.
+- Before you delete a branch, worktree or commit, check that it is merged into main or reachable from another branch or tag. Before you remove a worktree, also check that `git status` shows no uncommitted or untracked files in it.
+- Never delete customer data or credentials for good unless you can name the backup that holds them.
+- Gabriel sends every post for an outside audience (social media, his website, an announcement), every customer message and every app store submission. Hand him the draft. Replies in a PR, ticket or task thread are work, and you may post them.
+- When a run spends money on a model provider, read [ADR 0002](https://github.com/gabchess/agent-factory/blob/main/decisions/0002-spend-is-capped-per-approval-before-money-moves.md) and get Gabriel's approved cap before the first paid call.
 
 ## Read when needed
 
@@ -33,7 +47,6 @@ Building:
 
 Running and reviewing work:
 
-- When a run spends money on a model provider, read [ADR 0002](https://github.com/gabchess/agent-factory/blob/main/decisions/0002-spend-is-capped-per-approval-before-money-moves.md) and get Gabriel's approved cap before the first paid call.
 - When a run is unattended or long, read [ADR 0003](https://github.com/gabchess/agent-factory/blob/main/decisions/0003-unattended-runs-are-bounded-probed-and-reconciled.md).
 - When you hand a task to another agent, act as [the orchestrator agent](https://github.com/gabchess/agent-factory/blob/main/agents/orchestration/orchestrator/AGENT.md), following [the orchestrate-task skill](https://github.com/gabchess/skills/blob/main/skills/orchestration/orchestrate-task/SKILL.md) and [`templates/prompt/README.md`](https://github.com/gabchess/agent-factory/blob/main/templates/prompt/README.md).
 - When a lane brief started you, read [the worker agent](https://github.com/gabchess/agent-factory/blob/main/agents/orchestration/worker/AGENT.md) and report with [the worker report template](https://github.com/gabchess/agent-factory/blob/main/templates/prompt/worker-report.md).
