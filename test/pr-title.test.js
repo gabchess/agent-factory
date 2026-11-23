@@ -22,6 +22,7 @@ test("each title that breaks the format fails with the fix", () => {
     [`type "Feat" is unknown. ${types}`],
     [`scope "" is not a noun. ${scope}`],
     [`scope "Checks" is not a noun. ${scope}`],
+    [`scope "0005" is not a noun. ${scope}`],
     [format],
     [`the description is missing. ${description}`],
     [`the description is missing. ${description}`],

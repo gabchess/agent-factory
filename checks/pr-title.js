@@ -11,7 +11,7 @@ export function check(title) {
   const { type, scope, description } = header.groups;
   return [
     !TYPES.includes(type) && `type "${type}" is unknown. Use one of ${TYPES.join(", ")}.`,
-    scope !== undefined && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(scope) && `scope "${scope}" is not a noun. ${SCOPE}`,
+    scope !== undefined && !/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(scope) && `scope "${scope}" is not a noun. ${SCOPE}`,
     !/^\S/.test(description) && `the description is missing. ${DESCRIPTION}`,
   ].filter(Boolean);
 }

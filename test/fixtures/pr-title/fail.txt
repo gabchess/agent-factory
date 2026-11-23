@@ -5,6 +5,7 @@ feature: add the PR title check
 Feat: add the PR title check
 fix(): skip binary files
 fix(Checks): skip binary files
+docs(0005): clarify squash settings
 feat:add the PR title check
 feat:  add the PR title check
 docs: 
