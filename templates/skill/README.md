@@ -19,6 +19,11 @@ Extend an existing skill when the job is the same. Start a new one when merging 
 - `name` is lowercase letters, digits and hyphens, at most 64 characters, the same as the folder, and unique across the repo.
 - `description` says what the skill is, then when to use it, in one to three sentences and at most 1024 characters. It is the only part an agent sees before it loads the skill, so lead with the words a person would type, and give each trigger its own branch.
 - Every step is one action with a "Done when" an agent can verify without asking.
+- Every step names what it uses: the tool, MCP server, other skill, command, or file to read or fetch, and the service or tech behind it when the agent must know it to act.
+- Write for an agent that has never met the owner and has none of your memory or chat history. Name a person only with who they are and why the step needs them. Define every project name, path and term on first use, or point to where it is defined.
+- Every line tells the agent what to do, what to use, what to check, what is allowed or what is not, or why a step exists. Cut a line that only comments on another document, such as a note about which words a check allows. Put that fact where the rule it changes lives.
+- Write a preference that depends on the setup as a condition with a fallback: "When `<model or tool>` is available, use it. Otherwise use whatever the current harness offers." A bare "use X" fails on every harness that lacks X.
+- A skill built around one person's preferences says whose they are in its `name` and first line, for example a `<person>-voice` skill that starts by saying it covers writing for that person on every surface.
 - The order is the loading order: the summary, then the steps, then the output, then the background. An agent that stops reading after the steps still does the job.
 - Say each rule once. Point to another skill or file by name instead of copying it.
 - Keep `SKILL.md` under 500 lines. Move detail into `references/`, code into `scripts/` and files the skill copies into `assets/`, and point to each from the step that needs it.

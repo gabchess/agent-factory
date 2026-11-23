@@ -5,7 +5,8 @@ Orchestrator → control the flow → structure outputs → execute actions → 
 - This repo is the source of truth. Linear may link here. Nothing here links to Linear.
 - Run `npm test` and `npm run check` before every commit.
 - No em or en dashes anywhere, and no hyphen used as a dash in Markdown prose, except in `test/fixtures/`, which holds the failing examples for the checks. Rewrite the sentence with a comma, colon, period or parentheses. Write ranges as "44 to 51".
-- One PR, one outcome. Never push to main.
+- One PR, one outcome. Never push to main. Open the PR and leave the merge to the owner, Gabriel (GitHub `gabchess`), unless he approved merging that PR yourself.
+- Write every file here for an agent with none of your context: no first names without who they are, no "for now" or "this change", and no line that does not tell the reader what to do, use or check.
 
 ## Read when needed
 
