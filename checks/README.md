@@ -32,6 +32,10 @@ The PR title check, which reads a title instead of the repo:
 
 - `pr-title.js`: fails a PR title that breaks the format in `decisions/0005-pr-titles-follow-conventional-commits.md`. `run-pr-title.js` runs it on the title passed as an argument or in `PR_TITLE`, and `.github/workflows/pr-title.yml` runs it on every PR. Its test reads one title per line from `test/fixtures/pr-title/pass.txt` and `fail.txt`.
 
+The deny list check, which reads a harness's settings instead of the repo:
+
+- `deny-list.js`: fails a Claude Code `settings.json` whose `permissions.deny` lacks a rule from `templates/deny-list/claude-code.json`, and a `templates/deny-list/list.json` entry with no Claude Code mapping. `run-deny-list.js` runs it on the path passed as an argument: `npm run check:deny -- ~/.claude/settings.json`. CI never runs it, since the file lives on each machine. Its test reads `test/fixtures/deny-list/pass/settings.json` and `fail/settings.json`.
+
 The generator, which CI never runs:
 
 - `write-snapshot.js`: writes `data/instructions.snapshot` from the repo as it is now. Run it with `npm run snapshot` after changing an `AGENTS.md`, a `CLAUDE.md`, a skill or an MCP contract.

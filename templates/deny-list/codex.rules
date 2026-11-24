@@ -1,0 +1,56 @@
+# Copy into ~/.codex/rules/deny-list.rules. Each rule names its entry in list.json.
+
+# print-tokens
+prefix_rule(
+    pattern = ["gh", "auth", "token"],
+    decision = "forbidden",
+    justification = "print-tokens: prints a GitHub token. Pass the token by its variable name.",
+    match = ["gh auth token"],
+)
+prefix_rule(
+    pattern = ["gh", "auth", "status", ["--show-token", "-t"]],
+    decision = "forbidden",
+    justification = "print-tokens: prints a GitHub token. Run gh auth status without it.",
+    match = ["gh auth status --show-token"],
+    not_match = ["gh auth status"],
+)
+
+# push-main
+prefix_rule(
+    pattern = ["git", "push", "origin", ["main", "master", "HEAD:main"]],
+    decision = "forbidden",
+    justification = "push-main: change main only by merging a PR. Push a branch and open one.",
+    match = ["git push origin main", "git push origin HEAD:main"],
+    not_match = ["git push origin claude/fix"],
+)
+prefix_rule(
+    pattern = ["git", "push", ["--force", "-f"], "origin", "main"],
+    decision = "forbidden",
+    justification = "push-main: never force push to main.",
+    match = ["git push -f origin main"],
+)
+
+# bypass-review-merge: a prefix cannot match --admin after the PR number, so every merge asks.
+prefix_rule(
+    pattern = ["gh", "pr", "merge"],
+    decision = "prompt",
+    justification = "bypass-review-merge: merge only with the approved head pinned, never with --admin.",
+    match = ["gh pr merge 12 --squash"],
+)
+
+# delete-repo
+prefix_rule(
+    pattern = ["gh", "repo", "delete"],
+    decision = "forbidden",
+    justification = "delete-repo: deletes main and its history.",
+    match = ["gh repo delete gabchess/x"],
+)
+
+# delete-root-or-home
+prefix_rule(
+    pattern = ["rm", ["-rf", "-fr"], ["/", "~", "~/"]],
+    decision = "forbidden",
+    justification = "delete-root-or-home: deletes customer data and credentials for good.",
+    match = ["rm -rf /", "rm -rf ~"],
+    not_match = ["rm -rf build"],
+)
