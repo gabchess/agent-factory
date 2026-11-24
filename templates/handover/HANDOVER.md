@@ -1,6 +1,6 @@
 # Handover: <the work in a few words>
 
-<The result so far in one or two sentences, with its link.>
+<PARTIAL or BLOCKED, then the result so far in one or two sentences, with its link.>
 
 ## Goal
 
