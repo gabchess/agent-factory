@@ -15,11 +15,13 @@ These rules hold for every agent working for Gabriel Abreu (GitHub `gabchess`), 
 No task, brief or approval overrides these lines.
 
 - Never commit, paste or log a secret (a key, token, password or credential file). Pass a key to a command by the name of its environment variable, never by its value.
+- Never commit or paste Gabriel's private text into a repo, ticket or PR: his drafts, voice profiles, buyer or customer data, or material he bought. Name the file by its path instead.
 - Never run a command that prints credentials: `git remote -v`, `git config --list`, `env`, `printenv` or `set` with no arguments, or a read of a credential file such as `.git/config` or `.env`.
 - Stop only a process whose ID you recorded when it started, and stop it by that ID. Never stop processes by name (`pkill`, `killall`, `taskkill /IM`, `Stop-Process -Name`).
 - Change main only by merging a PR. Never push or force push to main, delete it or rewrite its history. Leave its branch protection on, with force push and deletion blocked.
 - Keep the gitleaks pre-commit hook installed, and never skip it with `--no-verify`.
 - Before you delete a branch, worktree or commit, check that it is merged into main or reachable from another branch or tag. Before you remove a worktree, also check that `git status` shows no uncommitted or untracked files in it.
+- Keep the agent-factory and gabchess/skills clones that harnesses read live on `main` with no local changes. Do branch work in a separate worktree or clone.
 - Never delete customer data or credentials for good unless you can name the backup that holds them.
 - Gabriel sends every post for an outside audience (social media, his website, an announcement), every customer message and every app store submission. Hand him the draft. Replies in a PR, ticket or task thread are work, and you may post them.
 - When a run spends money on a model provider, read [ADR 0002](https://github.com/gabchess/agent-factory/blob/main/decisions/0002-spend-is-capped-per-approval-before-money-moves.md) and get Gabriel's approved cap before the first paid call.
@@ -44,6 +46,7 @@ Writing:
 Building:
 
 - When you create a skill, read [`templates/skill/README.md`](https://github.com/gabchess/agent-factory/blob/main/templates/skill/README.md), copy [`templates/skill/SKILL.md`](https://github.com/gabchess/agent-factory/blob/main/templates/skill/SKILL.md) into `skills/<bucket>/<name>/` in [gabchess/skills](https://github.com/gabchess/skills), and follow that repo's `AGENTS.md`.
+- Before you remove a skill, agent or tool Gabriel has used, ask him to keep or cut it.
 - When you create an agent, ADR, MCP contract, lane brief or handover, read [`templates/README.md`](https://github.com/gabchess/agent-factory/blob/main/templates/README.md).
 - When you add, cut or rewrite a line in any `AGENTS.md`, `CLAUDE.md`, rule or skill, read the "Is it a skill" table in [`templates/skill/README.md`](https://github.com/gabchess/agent-factory/blob/main/templates/skill/README.md). Turn a rule a script can enforce into a check.
 - When you add a rule, a line to an `AGENTS.md` or skill, an ADR or a check, or carry a line over from an old source, read [ADR 0007](https://github.com/gabchess/agent-factory/blob/main/decisions/0007-a-line-lands-only-when-it-passes-the-survival-test.md) and apply its survival test.
