@@ -1,0 +1,17 @@
+# Merge into ~/.codex/config.toml, under each MCP server you have. Codex names a tool without its server prefix.
+
+# publish-or-schedule-posts and message-customers
+[mcp_servers.eden]
+disabled_tools = [
+  "eden_publish_post_now",
+  "eden_schedule_post",
+  "eden_schedule_drafts",
+  "eden_update_scheduled_post",
+  "eden_publish_custom_ai_product",
+  "eden_create_routine",
+  "eden_update_routine",
+  "eden_create_auto_dm_automation",
+  "eden_update_auto_dm_automation",
+  "eden_manage_dm_flows",
+  "eden_manage_store_emails",
+]

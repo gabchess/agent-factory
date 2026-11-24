@@ -1,0 +1,47 @@
+[
+  {
+    "id": "read-secret-files",
+    "denies": "Reading env files, private keys, SSH and cloud credential folders, and the Codex auth file.",
+    "floor": "Never commit, paste or log a secret"
+  },
+  {
+    "id": "print-tokens",
+    "denies": "Commands that print a GitHub token.",
+    "floor": "Never run a command that prints credentials"
+  },
+  {
+    "id": "push-main",
+    "denies": "Pushing or force pushing to main or master.",
+    "floor": "Change main only by merging a PR"
+  },
+  {
+    "id": "bypass-review-merge",
+    "denies": "Merging with admin rights past branch protection, and the GitHub connector's merge tool, which merges without pinning the head.",
+    "floor": "Change main only by merging a PR"
+  },
+  {
+    "id": "delete-repo",
+    "denies": "Deleting a GitHub repo, which deletes main and its history.",
+    "floor": "Change main only by merging a PR"
+  },
+  {
+    "id": "delete-root-or-home",
+    "denies": "Recursive deletes of the root or home folder, which hold customer data and credentials.",
+    "floor": "Never delete customer data or credentials for good"
+  },
+  {
+    "id": "publish-or-schedule-posts",
+    "denies": "Publishing, scheduling or rescheduling a post, publishing a product, and creating or changing a routine that posts.",
+    "floor": "Gabriel sends every post for an outside audience"
+  },
+  {
+    "id": "message-customers",
+    "denies": "Sending, replying to or forwarding mail, and creating or changing DM automations, DM flows and store emails.",
+    "floor": "Gabriel sends every post for an outside audience"
+  },
+  {
+    "id": "paid-call-without-cap",
+    "denies": "A paid model or generation call before Gabriel approved a spend cap for the run.",
+    "floor": "When a run spends money on a model provider"
+  }
+]

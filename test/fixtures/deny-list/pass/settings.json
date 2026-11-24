@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash"
+    ],
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.production)",
+      "Read(**/.env.development)",
+      "Read(**/*.pem)",
+      "Read(**/id_rsa)",
+      "Read(**/id_ed25519)",
+      "Read(//c/Users/test/.ssh/**)",
+      "Read(//c/Users/test/.aws/**)",
+      "Read(//c/Users/test/.codex/auth.json)",
+      "Bash(gh auth token*)",
+      "Bash(gh auth status*--show-token*)",
+      "Bash(git push origin main*)",
+      "Bash(git push origin master*)",
+      "Bash(git push origin HEAD:main*)",
+      "Bash(git push --force origin main*)",
+      "Bash(git push -f origin main*)",
+      "Bash(gh pr merge * --admin*)",
+      "mcp__claude_ai_github__merge_pull_request",
+      "Bash(gh repo delete*)",
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf ~/)",
+      "mcp__claude_ai_Eden__eden_publish_post_now",
+      "mcp__claude_ai_Eden__eden_schedule_post",
+      "mcp__claude_ai_Eden__eden_schedule_drafts",
+      "mcp__claude_ai_Eden__eden_update_scheduled_post",
+      "mcp__claude_ai_Eden__eden_publish_custom_ai_product",
+      "mcp__claude_ai_Eden__eden_create_routine",
+      "mcp__claude_ai_Eden__eden_update_routine",
+      "mcp__claude_ai_Gmail__send_message",
+      "mcp__claude_ai_Gmail__reply",
+      "mcp__claude_ai_Gmail__forward",
+      "mcp__claude_ai_Eden__eden_create_auto_dm_automation",
+      "mcp__claude_ai_Eden__eden_update_auto_dm_automation",
+      "mcp__claude_ai_Eden__eden_manage_dm_flows",
+      "mcp__claude_ai_Eden__eden_manage_store_emails",
+      "Bash(extra*)"
+    ]
+  }
+}
