@@ -71,7 +71,7 @@ Running and reviewing work:
 - When you open, review or merge a PR, read [ADR 0006](https://github.com/gabchess/agent-factory/blob/main/decisions/0006-a-pr-merges-on-a-verdict-for-its-exact-head.md).
 - When you report work as done, read [ADR 0001](https://github.com/gabchess/agent-factory/blob/main/decisions/0001-verification-and-reporting-keep-independent-evidence.md).
 - When you review a PR, a branch or a finished run, read [the review-change skill](https://github.com/gabchess/skills/blob/main/skills/reviews/review-change/SKILL.md).
-- When your run failed or was blocked, read [the repair-from-runs skill](https://github.com/gabchess/skills/blob/main/skills/quality/repair-from-runs/SKILL.md) and use it to diagnose the cause and propose one fix.
+- When your run failed or was blocked, or `data/runs.jsonl` holds repeated failures or blocks, read [the repair-from-runs skill](https://github.com/gabchess/skills/blob/main/skills/quality/repair-from-runs/SKILL.md) and follow its steps through to a verified fix.
 - When you stop before the task is done, read [`templates/handover/README.md`](https://github.com/gabchess/agent-factory/blob/main/templates/handover/README.md) and fill [`templates/handover/HANDOVER.md`](https://github.com/gabchess/agent-factory/blob/main/templates/handover/HANDOVER.md).
 - When you add, use or look for an MCP server or tool, read [`tools/README.md`](https://github.com/gabchess/agent-factory/blob/main/tools/README.md).
 
