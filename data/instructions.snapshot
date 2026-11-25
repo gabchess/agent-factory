@@ -56,6 +56,7 @@ Writing:
 Building:
 
 - When you create a skill, read [`templates/skill/README.md`](https://github.com/gabchess/agent-factory/blob/main/templates/skill/README.md), copy [`templates/skill/SKILL.md`](https://github.com/gabchess/agent-factory/blob/main/templates/skill/SKILL.md) into `skills/<bucket>/<name>/` in [gabchess/skills](https://github.com/gabchess/skills), and follow that repo's `AGENTS.md`.
+- When you are about to use or change a skill from [gabchess/skills](https://github.com/gabchess/skills), read [the capability-acceptance skill](https://github.com/gabchess/skills/blob/main/skills/quality/capability-acceptance/SKILL.md) and run its `stale` command first. When it lists that skill, rerun the skill's fresh-agent trial and write a fresh receipt. A stale listing never blocks your other work.
 - When you start a factory repo or rebuild one, read [README.md](https://github.com/gabchess/agent-factory/blob/main/README.md) and copy this repo's layout. Put its skills in [gabchess/skills](https://github.com/gabchess/skills), never in the factory repo.
 - Remove a skill, agent or tool Gabriel has used only when he asked for its removal.
 - When you create an agent, ADR, MCP contract, lane brief or handover, read [`templates/README.md`](https://github.com/gabchess/agent-factory/blob/main/templates/README.md).

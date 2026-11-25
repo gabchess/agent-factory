@@ -33,6 +33,7 @@ Extend an existing skill when the job is the same. Start a new one when merging 
 - Every step that dispatches a subagent says to start it with a fresh context window.
 - Put the recovery for a failure in the step where it happens. Stop only when no allowed path is left.
 - Before it ships, a fresh agent with no other context gets the skill and a realistic request, but not the answer you expect, and its result meets every "Done when".
+- When that trial passes, run `write` from [the capability-acceptance skill](https://github.com/gabchess/skills/blob/main/skills/quality/capability-acceptance/SKILL.md) on the committed skill, and commit the receipt it writes in the same PR.
 - Report the evidence you actually have, and only that.
 - Keep private material out: profiles, purchased lessons, raw transcripts and run outputs stay where they are. A skill keeps what it learned from them, not the files.
 
