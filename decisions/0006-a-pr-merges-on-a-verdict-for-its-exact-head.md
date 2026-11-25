@@ -1,6 +1,6 @@
 # A PR merges on a verdict for its exact head
 
-Every PR, rules and docs included, needs one approving verdict from a reviewer that did not write it, naming the full head SHA, and merges only at that SHA. The agent that opened the PR merges it once that gate passes. A PR that changes what customers or the public see also needs Gabriel's yes.
+Every PR, rules and docs included, needs one approving verdict from a reviewer that did not write it, naming the full head SHA, and merges only at that SHA. The agent that opened the PR merges it once that gate passes. A PR that changes what customers or the public use or read, or that changes the safety floor or the deny list, also needs Gabriel's yes.
 
 ## Rules
 
@@ -11,7 +11,7 @@ Every PR, rules and docs included, needs one approving verdict from a reviewer t
 - The author never writes the verdict on its own change.
 - A new head voids every verdict on the old one. Review the new head again.
 - The agent that opened the PR merges it with the head pinned to the approved SHA (`gh pr merge --squash --match-head-commit <sha>`), so the merge fails when a commit landed after the verdict.
-- A PR that changes what customers or the public see (a product, a public page, a store listing) merges only after Gabriel's yes, given in the PR, in the chat, or as a standing yes for a named batch or repo.
+- A PR that changes what customers or the public use or read (a product, an app, his website, a store listing, published content), or that changes the safety floor in `AGENTS.md` or `templates/deny-list/`, merges only after Gabriel's yes. Rules, docs, skills and code in a public repo are not public content. The yes is given in the PR, in the chat, or as a standing yes for a named batch or repo.
 - When round 2 of a review names a new form of the flaw round 1 named, the fix deletes the carrier: the field, text path or type that lets the bad value through. Moving or merging a filter is still a patch. The fix may land in the same PR.
 - A test that checks a guard covers a set takes the set from the real producer, such as the tool's own output. Never take it from the code under test or a hand-typed list.
 - A review from a model family other than the author's is optional and never a merge condition. Its finding blocks the merge only when it shows a bug.
@@ -23,7 +23,7 @@ A verdict is evidence about one commit. A push after it changes what merged, and
 ## Evidence
 
 - 0 unflagged escapes in 60 merged PRs that a non-author reviewer approved, from 2026-10-30 to 2026-11-14 (95 percent upper bound about 5 percent). The audit cannot see silent bugs. Source: gabchess/vault-agentops `40-RESEARCH/2026-11-14-reviewer-escape-audit.md` at `137b4c6`.
-- Docs-only catch: gabchess/skills PR 21 changed only two `SKILL.md` files, and its non-author review caught the verdict line placed last in the review report. Fixed in gabchess/skills `4f9e3e7`.
+- Rules PR catch: gabchess/skills PR 21 changed only two `SKILL.md` files, and its non-author review caught the verdict line placed last in the review report. Fixed in gabchess/skills `4f9e3e7`.
 - Gabriel's standing yes, 2026-11-24: "code-reviewer from agentskit can review, then if all things pass, ci/cd green and everythign goes smoothly, yall merge it, i trust you on this one". On 2026-11-25 he chose "Apply all" for the audit that made agent merges the rule (Linear GAB-842).
 - Second form: a key leak in one PR came back in three forms and was removed only at the fourth try, with a typed error (`50-LEARNINGS/2026-11-06-helius-build-failures.md`, row 5). Four PRs for a verdict parser closed on one carrier, the parser itself (`50-LEARNINGS/2026-11-07-verdict-check-parser-closed.md`). Both at `137b4c6`.
 - Real producer: gabchess/agent-rules PR 88 (commit `cc5a406`) added the rule after a retro of patched redesigns. The retro run test T14 takes its step list from the recorded calls of a clean run (`40-RESEARCH/2026-11-14-retro-run-state-machine.md` at `137b4c6`).
