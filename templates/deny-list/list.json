@@ -41,7 +41,7 @@
   },
   {
     "id": "paid-call-without-cap",
-    "denies": "A paid model or generation call before Gabriel approved a spend cap for the run.",
-    "floor": "When a run spends money on a model provider"
+    "denies": "A paid model or generation call before Gabriel approved a cap for that work or a standing budget that covers it.",
+    "floor": "When a run spends money on any paid service"
   }
 ]

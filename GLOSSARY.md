@@ -1,13 +1,13 @@
 # Glossary
 
-- **Owner.** Gabriel Abreu (GitHub `gabchess`), who merges PRs here and in [gabchess/skills](https://github.com/gabchess/skills). "The owner's words" means his message, quoted exactly.
+- **Owner.** Gabriel Abreu (GitHub `gabchess`), who decides product direction, spend and public posts. "The owner's words" means his message, quoted exactly.
 - **Harness.** The program that runs a model as an agent and loads its instructions and skills: Claude Code, Codex, Devin, Cursor, a Grok bot.
 - **Agent.** A model running in a harness with a role, instructions and tools.
 - **Orchestrator.** The agent that turns a goal into tasks, briefs workers, checks their work and reports. It never builds.
 - **Worker.** A fresh agent that does one task from one brief.
 - **Task.** One unit of work with a trigger, a done check and one writer.
 - **Trigger.** What starts a run: a ticket state, a schedule, a webhook or a person.
-- **Run.** One task from its trigger until it ends passed or blocked. A run never waits for a person: a blocked run files its ask and ends, and the answer starts a new run.
+- **Run.** One task from its trigger until it ends passed or blocked. An unattended run never waits for a person: a blocked run files its ask and ends, and the answer starts a new run.
 - **Attempt.** One worker's try within a run, gated and recorded as one row of `data/runs.jsonl`.
 - **Run record.** `data/runs.jsonl`, one JSON row per attempt, written by the `orchestrate-task` gate script. Rows are appended, never edited.
 - **Skill.** A folder with a `SKILL.md` that teaches an agent one workflow. Skills live in [gabchess/skills](https://github.com/gabchess/skills); this repo keeps the template.
@@ -26,5 +26,5 @@
 - **ADR.** A decision record in `decisions/`: the decision, why, and what result backs it.
 - **Verdict.** An independent reviewer's pass or fail on one exact commit.
 - **Claim.** What a worker says about its own result. A claim is recorded and never counts as a verdict.
-- **Approval.** Gabriel's go for one piece of work that spends money, with the most its attempts may reserve. The runner checks it before each paid attempt starts, so an attempt already running can end above it (ADR 0002).
+- **Approval.** Gabriel's go to spend money on a paid service: for one piece of work, with the most its attempts may reserve, or a standing budget he names. The runner checks it before each paid attempt starts, so an attempt already running can end above it (ADR 0002).
 - **Probe.** A run that costs nothing and tests the sandbox, network, credentials and instruction loading before the first paid attempt.
