@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Capability Acceptance Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "capability",
+    "path",
+    "tree_sha",
+    "state",
+    "verified_at",
+    "verifier",
+    "evidence"
+  ],
+  "properties": {
+    "capability": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable kebab-case name of the skill, tool contract, or workflow."
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repository-relative POSIX path covered by tree_sha."
+    },
+    "tree_sha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$",
+      "description": "Full 40-character Git tree or commit SHA pinned at verification time."
+    },
+    "state": {
+      "type": "string",
+      "enum": ["untested", "ran", "examined", "ready", "changed"]
+    },
+    "verified_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "ISO calendar date (YYYY-MM-DD) of the latest state transition."
+    },
+    "verifier": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Named person or independent review role that signed this state."
+    },
+    "evidence": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Sanitized summary of the live execution and independent check."
+    },
+    "open_blockers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "note": {
+      "type": "string"
+    }
+  }
+}
