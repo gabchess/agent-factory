@@ -4,6 +4,7 @@ A capability receipt records that a skill, tool contract or workflow ran on real
 
 ## Files
 
+- A skill's receipts live in `data/capability-receipts/` of its own repo, such as gabchess/skills, written by [the capability-acceptance skill](https://github.com/gabchess/skills/blob/main/skills/quality/capability-acceptance/SKILL.md). This folder holds the receipts for agent-factory's own capabilities.
 - Write one file per state change at `<capability>/<verified_at>.json`, with the colons in `verified_at` replaced by `-`, for example `pillar-planner/2026-11-25T15-40-00Z.json`. Each file conforms to `schema.json` in this folder.
 - Receipts are append only, like the other run records in `data/`. Never edit or delete a receipt. A new run, a review or a fix appends a new file.
 - The newest receipt wins: the file in `<capability>/` with the latest `verified_at` gives the capability's state. Older files are history.
