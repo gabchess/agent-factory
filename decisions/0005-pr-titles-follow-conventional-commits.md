@@ -27,7 +27,7 @@ Every PR merges to `main` as one squash commit whose message is the PR title. Th
 
 ## Releases
 
-Agents review PRs and the owner merges them (ADR 0006). Nobody bumps a version, writes a tag or edits a changelog by hand. A repo that starts to publish versions adds CI that derives each version from these types: `fix` bumps the patch, `feat` the minor and `!` the major.
+Agents review and merge PRs under ADR 0006. Nobody bumps a version, writes a tag or edits a changelog by hand. A repo that starts to publish versions adds CI that derives each version from these types: `fix` bumps the patch, `feat` the minor and `!` the major.
 
 ## Why
 

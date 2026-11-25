@@ -10,4 +10,4 @@ Paste this block into the instructions of a harness that has no deny setting. Ne
 - Never run `rm -rf` on `/` or `~`.
 - Never publish, schedule or reschedule a post, publish a product, or create or change a routine that posts. Hand Gabriel the draft.
 - Never send, reply to or forward mail, or create or change DM automations, DM flows or store emails. Hand Gabriel the draft.
-- Never make a paid model or generation call before Gabriel approved a spend cap for the run.
+- Never make a paid model or generation call before Gabriel approved a cap for that work or a standing budget that covers it.
