@@ -1,6 +1,6 @@
 # A PR merges on a verdict for its exact head
 
-Every PR, rules and docs included, needs one approving verdict from a reviewer that did not write it, naming the full head SHA, and merges only at that SHA. The agent that opened the PR merges it once that gate passes. A PR that changes what customers or the public use or read, or that changes the safety floor or the deny list, also needs Gabriel's yes.
+Every PR, rules and docs included, needs one approving verdict from a reviewer that did not write it, naming the full head SHA, and merges only at that SHA. The agent that opened the PR, or the agent that picks up its task, merges it once that gate passes. A PR that changes what customers or the public use or read, or that changes the safety floor, the deny list, the merge line in `AGENTS.md`, or ADRs 0002, 0006 or 0007, also needs Gabriel's yes.
 
 ## Rules
 
@@ -10,8 +10,8 @@ Every PR, rules and docs included, needs one approving verdict from a reviewer t
 - When a CI job never starts and GitHub says "recent account payments have failed or your spending limit needs to be increased", the account's monthly GitHub Actions minutes for private repos are used up. Nothing needs fixing and nobody needs asking. The reviewer runs every check the CI jobs run, the PR title check included, on the head, and quotes their last lines next to the same run on main. That run is green only when every failure on the head also fails by name on main. This holds until the minutes reset or the repo goes public.
 - The author never writes the verdict on its own change.
 - A new head voids every verdict on the old one. Review the new head again.
-- The agent that opened the PR merges it with the head pinned to the approved SHA (`gh pr merge --squash --match-head-commit <sha>`), so the merge fails when a commit landed after the verdict.
-- A PR that changes what customers or the public use or read (a product, an app, his website, a store listing, published content), or that changes the safety floor in `AGENTS.md` or `templates/deny-list/`, merges only after Gabriel's yes. Rules, docs, skills and code in a public repo are not public content. The yes is given in the PR, in the chat, or as a standing yes for a named batch or repo.
+- The agent that opened the PR, or the agent that picks up its task, merges it with the head pinned to the approved SHA (`gh pr merge --squash --match-head-commit <sha>`), so the merge fails when a commit landed after the verdict.
+- A PR that changes what customers or the public use or read (a product, an app, his website, a store listing, published content), or that changes the safety floor or the merge line in `AGENTS.md`, `templates/deny-list/`, or ADRs 0002, 0006 or 0007, merges only after Gabriel's yes. Rules, docs, skills and code in a public repo are not public content, unless merging the repo publishes it (his website, his GitHub profile README). The yes is given in the PR, in the chat, or as a standing yes for a named batch or repo.
 - When round 2 of a review names a new form of the flaw round 1 named, the fix deletes the carrier: the field, text path or type that lets the bad value through. Moving or merging a filter is still a patch. The fix may land in the same PR.
 - A test that checks a guard covers a set takes the set from the real producer, such as the tool's own output. Never take it from the code under test or a hand-typed list.
 - A review from a model family other than the author's is optional and never a merge condition. Its finding blocks the merge only when it shows a bug.
