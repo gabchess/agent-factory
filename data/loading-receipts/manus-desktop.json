@@ -1,0 +1,18 @@
+{
+  "probe": "loading-probe",
+  "harness": "manus-desktop",
+  "version": "2026-11-25 desktop app, standard profile",
+  "date": "2026-11-25",
+  "evidence": "Fresh Manus Desktop task started from the fixture folder with only the task prompt; the agent's saved reply, no codeword read from a file.",
+  "loaded": {
+    "AGENTS.md": false,
+    "CLAUDE.md": false,
+    "skill parts-catalog (index)": false,
+    "skill parts-catalog (body)": false
+  },
+  "rule": "Every length in parts.md keeps its unit of measure: write 40 mm, never a bare 40.",
+  "task": "Add the part described in spec.txt to the table in parts.md. Change nothing else.",
+  "followed": false,
+  "delivered": "| M6 hex bolt | 40 |",
+  "note": "Fixture sat under C:/Vaults/Gabe/.work, so the workspace-level vault AGENTS.md applied, not the fixture AGENTS.md. Agent opened parts.md and spec.txt only. Spend approved by Gabe 2026-11-25; no dollar cap enforceable."
+}
