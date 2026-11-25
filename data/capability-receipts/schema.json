@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Capability receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "capability",
+    "repo",
+    "path",
+    "tree_sha",
+    "state",
+    "verified_at",
+    "verifier",
+    "evidence"
+  ],
+  "if": { "properties": { "state": { "const": "ready" } } },
+  "then": { "properties": { "open_blockers": { "maxItems": 0 } } },
+  "properties": {
+    "capability": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Name of the skill, tool contract or workflow, the same as its folder name under data/capability-receipts/."
+    },
+    "repo": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+      "description": "GitHub owner/name of the repo that holds path, such as gabchess/skills. Run git rev-parse in a clone of this repo."
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "POSIX path in repo covered by tree_sha, such as skills/content/pillar-planner."
+    },
+    "tree_sha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$",
+      "description": "Full 40 character tree or blob SHA from git rev-parse HEAD:<path> in a clone of repo. Never a commit SHA."
+    },
+    "state": {
+      "type": "string",
+      "enum": ["ran", "examined", "ready"]
+    },
+    "verified_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+      "description": "UTC time of this state change, ISO 8601 (YYYY-MM-DDTHH:MM:SSZ). The receipt with the latest verified_at for a capability wins."
+    },
+    "verifier": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Who ran the capability (ran) or reviewed its output (examined, ready)."
+    },
+    "evidence": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What ran on which input and what the run or review showed, with a link to the run or review."
+    },
+    "open_blockers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "note": {
+      "type": "string"
+    }
+  }
+}
