@@ -12,6 +12,8 @@
     "verifier",
     "evidence"
   ],
+  "if": { "properties": { "state": { "const": "ready" } } },
+  "then": { "properties": { "open_blockers": { "maxItems": 0 } } },
   "properties": {
     "capability": {
       "type": "string",
@@ -26,7 +28,7 @@
     "tree_sha": {
       "type": "string",
       "pattern": "^[a-f0-9]{40}$",
-      "description": "Full 40-character Git tree or commit SHA pinned at verification time."
+      "description": "Full 40-character Git tree or blob SHA from git rev-parse HEAD:<path> at verification time."
     },
     "state": {
       "type": "string",

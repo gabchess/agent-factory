@@ -2,7 +2,7 @@
 
 One JSON receipt per verified skill, tool contract, or workflow capability, pinned to the exact tree SHA that was proven.
 
-A receipt records that a capability ran on realistic input and passed an independent inspection. If the files under the capability change, the recorded `tree_sha` no longer matches `git rev-parse HEAD:<path>` and the capability drops back to `changed` until it is re-verified.
+A receipt records that a capability ran on realistic input and passed an independent inspection. If the files under the capability change, the recorded `tree_sha` no longer matches `git rev-parse HEAD:<path>` and the capability drops back to `changed` until it is re-verified. That comparison sees only committed files, so check that `git status --porcelain -- <path>` prints nothing before you rely on a receipt.
 
 ## States
 
@@ -15,6 +15,6 @@ A receipt records that a capability ran on realistic input and passed an indepen
 ## Rules
 
 1. Never mark a capability `ready` from static reading or unit tests alone. Record a real execution in `evidence`.
-2. Pin `tree_sha` to `git rev-parse HEAD:<path>` (or the exact commit SHA when scoping a single file).
+2. Pin `tree_sha` to `git rev-parse HEAD:<path>`. That gives a tree SHA for a folder and a blob SHA for a single file; never record a commit SHA.
 3. Keep receipts committed beside `data/loading-receipts/`. Each receipt conforms to `schema.json` in this folder.
 4. Keep sensitive client data, tokens, and raw payloads out of `evidence` and `note`.
