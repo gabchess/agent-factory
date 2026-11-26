@@ -16,11 +16,11 @@ The cost: on a machine whose global hook already runs gitleaks, gitleaks runs tw
 ## Considered options
 
 - A local `core.hooksPath` to a tracked folder: git would skip the global gitleaks hook in this repo.
-- Tests in the hook: `npm test` alone took 5.2 to 9.7 seconds.
+- Tests in the hook: `npm test` alone took 3.9 to 4.2 seconds.
 - Letting the commit through when gitleaks fails without a report, as the global hook does: the commit would pass on a scan that never ran.
 
 ## Evidence
 
 - On 2026-11-25 two PR heads reached CI with `npm run check` failing while `AGENTS.md` said to run it before every commit. PR 36 at `6397111`: "data/instructions.snapshot:59: snapshot is stale from this line." (Actions run 45644206937). PR 43 at `192e2f7`: "AGENTS.md:53:96: pointer without a condition." (Actions run 45713974602).
 - Gabriel, 2026-11-26, asked which of two ideas he wanted for agent-factory, picked both: "A review also lists missing rules (Recommended), A fast pre-commit hook".
-- Measured on Windows 11 with Git 2.56, Node 26 and gitleaks 8.30.1, five commits each, timed by git's trace2 events for the hook. The global gitleaks hook alone took 0.90 to 1.21 seconds. With this hook chained after it, a commit with nothing staged took 1.99 to 2.73 seconds and one that changed a Markdown file 2.04 to 2.40 seconds. gitleaks alone took 0.66 to 1.18 seconds and `run.js --staged` 0.32 to 0.48 seconds. `npm test` took 5.2 to 9.7 seconds over five runs.
+- Measured on Windows 11 with Git 2.56, Node 26 and gitleaks 8.30.1, five runs each, the hook timed by git's trace2 events. The global gitleaks hook alone took 0.96 to 1.06 seconds. With this hook chained after it, a commit with nothing staged took 2.25 to 2.62 seconds and one that changed a Markdown file 2.08 to 2.28 seconds. This hook alone took 0.99 to 1.03 seconds, gitleaks alone 0.68 to 0.74 and `run.js --staged` 0.35 to 0.38. `npm test` took 3.9 to 4.2 seconds.
