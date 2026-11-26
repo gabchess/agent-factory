@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import * as prBody from "../checks/pr-body.js";
@@ -46,6 +47,9 @@ const fill = (template, { label, placeholder }) =>
 
 test("the check's template is the pr skill's own, and the check, the copy and AGENTS.md pin one commit of it", () => {
   assert.ok(REQUIRED.length >= 5, "the copied skill holds a template with its fields");
+  const bytes = Buffer.from(SKILL);
+  const blob = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  assert.ok(read("skill/UPSTREAM.md").includes(`blob \`${blob}\``), "the copy is the blob UPSTREAM.md names");
   assert.deepEqual(prBody.TEMPLATE, SECTIONS);
   assert.equal(prBody.SKILL_URL, URL_PIN);
   assert.ok(readFileSync(fileURLToPath(new URL("../AGENTS.md", import.meta.url)), "utf8").includes(`(${URL_PIN})`));
@@ -107,6 +111,7 @@ test("a label counts only as markup outside code, with content of its own under 
   assert.deepEqual(check(body("fail/code-placeholders")), [...REQUIRED.map(unfilled), PIN]);
   assert.deepEqual(check(body("fail/door-placeholder-html")), [noChoice("Merge Danger", "Door"), PIN]);
   assert.deepEqual(check(body("fail/door-placeholder-text")), [noChoice("Merge Danger", "Door"), PIN]);
+  assert.deepEqual(check(body("fail/emphasis-placeholder")), [empty("Merge Danger", "Blast Radius", "<one-word description>"), PIN]);
   assert.deepEqual(fails("inline-comment"), [empty("Evidence", "Before", before.placeholder), PIN]);
   assert.deepEqual(fails("out-of-order"), [ORDER, PIN]);
   assert.deepEqual(fails("no-sections"), [missing("Summary"), missing("Evidence"), missing("Merge Danger"), PIN]);
@@ -130,6 +135,7 @@ test("with --head and --command, the body names the head and a code block quotes
   assert.deepEqual(fails("head-in-href"), [noHead(HEAD)]);
   assert.deepEqual(check(body("pass/head-in-link"), { head: HEAD, commands: NPM }), []);
   assert.deepEqual(fails("filtered-command"), [noCommand("npm test")]);
+  assert.deepEqual(check(body("pass/tabbed-output"), { head: HEAD, commands: NPM }), []);
   assert.deepEqual(check(body("fail/no-checks")), []);
   assert.deepEqual(check(body("fail/other-sha"), { commands: NPM }), []);
 });

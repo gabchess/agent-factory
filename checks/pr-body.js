@@ -41,15 +41,21 @@ const ORDER = `the sections are out of order. Put them in the template's order: 
 const pieces = (body) =>
   markdown.parse(body, {}).flatMap((token) =>
     token.type === "inline"
-      ? token.children.map(({ type, content }) => ({ type, content, depth: token.level }))
+      ? token.children.map(({ type, content }) => ({ type, content, depth: token.level, inline: true }))
       : [{ type: token.type, tag: token.tag, nesting: token.nesting, content: token.content, depth: token.level }],
   );
 
 // The text a reader sees in one piece. GitHub hides comments and shows no tag or attribute of raw HTML.
 const shown = ({ type, content }) =>
-  type === "text" || type === "code_inline" || type === "image" || CODE.has(type) ? content : type.startsWith("html") ? content.replace(COMMENT, "").replace(/<[^>]*>/g, "") : "";
-// What a reader sees in a run of pieces, with the template's placeholders taken out, in code or not.
-const unplaced = (pieces) => PLACEHOLDERS.reduce((rest, placeholder) => rest.replaceAll(placeholder, ""), pieces.map(shown).join(" "));
+  type === "text" || type === "code_inline" || type === "image" || CODE.has(type)
+    ? content
+    : type.startsWith("html")
+      ? content.replace(COMMENT, "").replace(/<[^>]*>/g, "")
+      : type === "softbreak" || type === "hardbreak" ? "\n" : "";
+// The text a reader sees in a run of pieces: inline pieces run together as they render, and each block stands on its own lines.
+const visible = (pieces) => pieces.map((piece) => (piece.inline ? shown(piece) : `\n${shown(piece)}\n`)).join("");
+// That text with the template's placeholders taken out, in code or not.
+const unplaced = (pieces) => PLACEHOLDERS.reduce((rest, placeholder) => rest.replaceAll(placeholder, ""), visible(pieces));
 
 // Splits the pieces at each top-level "# " or "## " heading. A "## " section is named by its text in lower case.
 function sections(all) {
@@ -124,7 +130,7 @@ const typed = (line, command) => {
   const prompted = /^\s*\$\s+(.*)$/.exec(line);
   if (prompted) return prompted[1].trim() === command ? "" : undefined;
   const rest = line.trim();
-  return rest === command ? "" : rest.startsWith(command) && /^(?:\t| {2,})\S/.test(rest.slice(command.length)) ? rest.slice(command.length) : undefined;
+  return rest === command ? "" : rest.startsWith(command) && /^(?:\t| {2})\s*\S/.test(rest.slice(command.length)) ? rest.slice(command.length) : undefined;
 };
 
 // "output" when a code block quotes the command with output on its line or on the next line that is not another command.
@@ -144,7 +150,7 @@ function quoted(blocks, command, commands) {
 
 function output(all, { head, commands }) {
   const blocks = all.filter(({ type }) => CODE.has(type)).map(({ content }) => content.split("\n"));
-  const hex = all.map(shown).join("\n").toLowerCase().split(/[^0-9a-f]+/);
+  const hex = visible(all).toLowerCase().split(/[^0-9a-f]+/);
   return [
     head && !hex.includes(head.toLowerCase()) && `the body does not name the head ${head}. Run the checks at the head and quote their last lines with its SHA, as ADR 0006 asks.`,
     ...commands.map((command) => {
