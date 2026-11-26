@@ -79,6 +79,16 @@ describe("the pre-commit hook", { concurrency: true }, () => {
     assert.equal(await commits(git), "2");
   });
 
+  test("a file marked with git add -N stays out of the checks, as it stays out of the commit", async (t) => {
+    const { repo, git } = await clone(t);
+    writeFileSync(join(repo, "AGENTS.md"), "# rules\n");
+    await git("add", "-N", "AGENTS.md");
+    await stage(repo, git, "fine\n");
+    const commit = await git("commit", "-m", "add a note");
+    assert.equal(commit.status, 0, commit.stderr);
+    assert.equal(await commits(git), "2");
+  });
+
   for (const [state, stub, message] of GITLEAKS) {
     test(`a gitleaks that ${state} refuses the commit and says how to fix it`, async (t) => {
       const { repo, git } = await clone(t, stub);

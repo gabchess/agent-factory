@@ -34,16 +34,18 @@ function readBlobs(objects) {
   });
 }
 
+// The tree the commit will record: `git write-tree` leaves out a file marked with `git add -N`, as the commit does.
 export function stagedRepo() {
-  const entries = execFileSync("git", ["ls-files", "-z", "--stage"], { encoding: "utf8" })
+  const tree = execFileSync("git", ["write-tree"], { encoding: "utf8" }).trim();
+  const entries = execFileSync("git", ["ls-tree", "-r", "-z", tree], { encoding: "utf8" })
     .split("\0")
     .filter(Boolean)
     .map((entry) => {
-      const [meta, path] = entry.split("\t");
-      const [mode, object, stage] = meta.split(" ");
-      return { mode, object, stage, path };
+      const tab = entry.indexOf("\t");
+      const [mode, type, object] = entry.slice(0, tab).split(" ");
+      return { mode, type, object, path: entry.slice(tab + 1) };
     })
-    .filter(({ mode, stage }) => (mode === "100644" || mode === "100755") && stage === "0");
+    .filter(({ mode, type }) => type === "blob" && (mode === "100644" || mode === "100755"));
   const blobs = readBlobs(entries.map(({ object }) => object));
   const texts = new Map(entries.map(({ path }, index) => [path, blobs[index]]));
   const read = (path) => (path.startsWith(FIXTURES) || texts.get(path).includes("\0") ? null : texts.get(path));

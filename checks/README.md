@@ -6,7 +6,7 @@ Every check has a passing and a failing fixture under `test/fixtures/<check>/` a
 
 Support modules, shared by the checks:
 
-- `git-repo.js`: lists the files git tracks or would track, and skips `test/fixtures/` and binary files. `stagedRepo()` reads the files as they are staged in the index instead, for `run.js --staged`.
+- `git-repo.js`: lists the files git tracks or would track, and skips `test/fixtures/` and binary files. `stagedRepo()` reads the tree the commit will record instead (`git write-tree`, which leaves out files marked with `git add -N`), for `run.js --staged`.
 - `repo.js`: builds the snapshot a check reads, the same way for the real repo and for a fixture.
 - `markdown.js`: gives the prose lines of a Markdown file, without code blocks or inline code.
 - `lines.js`: finds every match of a pattern, line by line, with its column.
