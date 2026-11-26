@@ -51,13 +51,16 @@ const pieces = (body) =>
 // except the tags GitHub's tag filter shows as text, such as <textarea>.
 const SHOWN_TAG = /^<\/?(?:iframe|noembed|noframes|plaintext|script|style|textarea|title|xmp)(?=[\s/>])/i;
 const BREAK_TAG = /^<\/?(?:address|article|aside|blockquote|br|dd|details|div|dl|dt|figcaption|figure|footer|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|summary|table|tbody|td|tfoot|th|thead|tr|ul)(?=[\s/>])/i;
-// A whole tag, with a ">" inside a quoted attribute value kept inside the tag.
-const TAG = /<(?:[^>"']|"[^"]*"|'[^']*')*>/g;
+// Raw HTML split by markdown-it's own CommonMark grammar: each tag or comment is one html_inline piece, so "< 50" stays
+// text and a ">" in a quoted attribute stays in its tag, and the text between has its entities decoded, as "&nbsp;" is.
+const rawHtml = new MarkdownIt("zero", { html: true }).enable(["html_inline", "entity", "newline"]);
+const html = (content) => rawHtml.parseInline(content.replace(COMMENT, ""), {})[0]?.children ?? [];
+const tagText = (tag) => (tag.startsWith("<!--") ? "" : SHOWN_TAG.test(tag) ? tag : BREAK_TAG.test(tag) ? "\n" : "");
 const shown = ({ type, content }) =>
   type === "text" || type === "code_inline" || type === "image" || CODE.has(type)
     ? content
     : type.startsWith("html")
-      ? content.replace(COMMENT, "").replace(TAG, (tag) => (SHOWN_TAG.test(tag) ? tag : BREAK_TAG.test(tag) ? "\n" : ""))
+      ? html(content).map((piece) => (piece.type === "html_inline" ? tagText(piece.content) : shown(piece))).join("")
       : type === "softbreak" || type === "hardbreak" ? "\n" : "";
 // The text a reader sees in a run of pieces: inline pieces run together as they render, and each block stands on its own lines.
 const visible = (pieces) => pieces.map((piece) => (piece.inline ? shown(piece) : `\n${shown(piece)}\n`)).join("");
@@ -101,7 +104,7 @@ function scopes(section, label, labels) {
 }
 
 const visual = (scope) =>
-  scope.some((piece) => (CODE.has(piece.type) && unplaced([piece]).trim()) || piece.type === "image" || (piece.type.startsWith("html") && (piece.content.replace(COMMENT, "").match(TAG) ?? []).some((tag) => IMAGE.test(tag))));
+  scope.some((piece) => (CODE.has(piece.type) && unplaced([piece]).trim()) || piece.type === "image" || (piece.type.startsWith("html") && html(piece.content).some((tag) => tag.type === "html_inline" && IMAGE.test(tag.content))));
 const filled = (scope) => WORD.test(unplaced(scope)) || visual(scope);
 
 function field(section, labels, heading, { label, placeholder }) {

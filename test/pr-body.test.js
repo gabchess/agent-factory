@@ -133,6 +133,7 @@ test("with --head and --command, the body names the head and a code block quotes
   assert.deepEqual(fails("no-checks"), [noHead(HEAD), ...NPM.map(noCommand)]);
   assert.deepEqual(fails("hidden-head"), [noHead(HEAD)]);
   assert.deepEqual(fails("head-in-href"), [noHead(HEAD)]);
+  assert.deepEqual(fails("unclosed-comment"), [noHead(HEAD)]);
   assert.deepEqual(check(body("pass/head-in-link"), { head: HEAD, commands: NPM }), []);
   assert.deepEqual(fails("filtered-command"), [noCommand("npm test")]);
   assert.deepEqual(check(body("pass/tabbed-output"), { head: HEAD, commands: NPM }), []);
@@ -142,6 +143,13 @@ test("with --head and --command, the body names the head and a code block quotes
   assert.deepEqual(check(body("pass/textarea-after"), { head: HEAD, commands: NPM }), []);
   assert.deepEqual(check(body("pass/custom-tags"), { head: HEAD, commands: NPM }), []);
   assert.deepEqual(fails("quoted-attribute"), [noHead(HEAD), empty("Evidence", "Before", "<screenshot/output/failing test run>"), PIN]);
+  assert.deepEqual(check(body("pass/html-text"), { head: HEAD, commands: NPM }), []);
+  assert.deepEqual(check(body("fail/entities")), [
+    empty("Evidence", "Before", "<screenshot/output/failing test run>"),
+    empty("Evidence", "After", "<screenshot/output/passing test run>"),
+    empty("Merge Danger", "Blast Radius", "<one-word description>"),
+    PIN,
+  ]);
   assert.deepEqual(fails("custom-tag"), [
     empty("Evidence", "Before", "<screenshot/output/failing test run>"),
     empty("Merge Danger", "Blast Radius", "<one-word description>"),
