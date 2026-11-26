@@ -11,7 +11,7 @@ The written line was skipped twice in one day (Evidence). A hook runs the same c
 3. A check that cannot run refuses the commit and names the fix: gitleaks or node missing, a gitleaks error with no report, or a checkout without `checks/pre-commit.sh`.
 4. The checks run in parallel and fit 3 seconds. `npm test` runs before every PR under ADR 0006, where its time costs one wait per PR.
 
-The cost: on a machine whose global hook already runs gitleaks, gitleaks runs twice, about one second more per commit. Each clone runs `npm run hooks` once. A worktree on a branch from before this hook cannot commit until it is rebased onto main.
+The cost: on a machine whose global hook already runs gitleaks, gitleaks runs twice, about one second more per commit. Each clone runs `npm run hooks` once. A worktree on a branch from before this hook cannot commit until it is rebased onto main. A commit runs the checked-out branch's own `checks/`, as `npm test` on that branch does, so a commit on someone else's branch runs their code.
 
 ## Considered options
 
