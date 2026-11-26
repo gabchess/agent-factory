@@ -13,38 +13,26 @@ const NO_HEAD = 'the checks\' output does not say which commit it ran on. Add "$
 const NO_COMMANDS = 'the checks\' output holds no check command. Write each one as "$ <command>", with the last lines it printed under it.';
 const ORDER = 'the sections are out of order. Put them in the pr skill\'s order: "## Summary", "## Evidence", "## Merge danger".';
 
-// Drops HTML comments, which GitHub does not show, from one line outside a code block. Returns the visible text and whether a comment is still open.
-function uncomment(line, open) {
-  let visible = "";
-  let rest = line;
-  while (rest) {
-    const marker = open ? rest.indexOf("-->") : rest.indexOf("<!--");
-    if (marker === -1) {
-      if (!open) visible += rest;
-      break;
-    }
-    if (!open) visible += rest.slice(0, marker);
-    rest = rest.slice(marker + (open ? 3 : 4));
-    open = !open;
-  }
-  return { visible, open };
-}
+// A comment block as CommonMark defines one: a line that starts with "<!--", through the first line holding "-->". GitHub shows none of it.
+const COMMENT = /^ {0,3}<!--/;
 
 // Each section holds, in order, the prose lines and fenced code blocks under one "## " heading; the first holds what comes before any heading.
 function sections(lines) {
   const all = [{ name: null, items: [] }];
   let fence = null;
   let comment = false;
-  for (const raw of lines) {
+  for (const line of lines) {
     const section = all.at(-1);
     if (fence) {
-      const marker = raw.match(FENCE)?.[1];
+      const marker = line.match(FENCE)?.[1];
       if (marker && marker[0] === fence[0] && marker.length >= fence.length) fence = null;
-      else section.items.at(-1).lines.push(raw);
+      else section.items.at(-1).lines.push(line);
       continue;
     }
-    const { visible: line, open } = uncomment(raw, comment);
-    comment = open;
+    if (comment || COMMENT.test(line)) {
+      comment = !line.slice(comment ? 0 : line.indexOf("<!--") + 4).includes("-->");
+      continue;
+    }
     const marker = line.match(FENCE)?.[1];
     if (marker) {
       fence = marker;
@@ -58,7 +46,7 @@ function sections(lines) {
   return all;
 }
 
-const hasText = (item) => item.lines.some((line) => line.replace(/^[\s>*+-]+/, "").trim());
+const hasText = (item) => item.lines.some((line) => (item.code ? line : line.replace(/^[\s>*+-]+/, "")).trim());
 
 // Maps each "$ <command>" line to whether a line of output follows it before the next command.
 function commandsRun(block) {

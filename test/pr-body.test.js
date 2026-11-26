@@ -32,6 +32,10 @@ test("bodies with the pr skill's sections under the checks' output at the head p
   assert.deepEqual(check(body("pass/multiline-evidence"), { head: HEAD, commands: COMMANDS }), []);
 });
 
+test("a comment opener in inline code and output made of dashes are text GitHub shows, so they pass", () => {
+  assert.deepEqual(check(body("pass/literal-markers"), { head: HEAD, commands: COMMANDS }), []);
+});
+
 test("each body that lacks what the pr skill or the checks' output needs fails with the fix", () => {
   const fails = (name) => check(body(`fail/${name}`), { head: HEAD, commands: COMMANDS });
   assert.deepEqual(fails("no-checks"), [OPEN]);
