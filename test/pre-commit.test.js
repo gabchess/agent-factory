@@ -1,0 +1,395 @@
+import { describe, test } from "node:test";
+import assert from "node:assert/strict";
+import { execFileSync, spawn } from "node:child_process";
+import { randomBytes } from "node:crypto";
+import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { delimiter, dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const CHECKS = fileURLToPath(new URL("../checks/", import.meta.url));
+const slash = (path) => path.split("\\").join("/");
+
+const PASS = '#!/bin/sh\nwhile [ $# -gt 0 ]; do [ "$1" = --report-path ] && printf "[]\\n" > "$2"; shift; done\nexit 0\n';
+const FIND = '#!/bin/sh\nwhile [ $# -gt 0 ]; do [ "$1" = --report-path ] && printf \'[{"File": "note.md", "Secret": "REDACTED"}]\\n\' > "$2"; shift; done\nexit 1\n';
+const CRASH = "#!/bin/sh\necho 'FTL unable to load gitleaks config' >&2\nexit 1\n";
+
+const run = (command, args, options) =>
+  new Promise((done, fail) => {
+    const child = spawn(command, args, options);
+    const output = { stdout: "", stderr: "" };
+    child.on("error", (error) => fail(new Error(`${command} could not start: ${error.message}`)));
+    child.stdout.on("data", (data) => (output.stdout += data));
+    child.stderr.on("data", (data) => (output.stderr += data));
+    child.on("close", (status) => done({ status, ...output }));
+  });
+
+async function clone(t, gitleaks = PASS, { name = "gitleaks", mode = 0o755, native = false } = {}) {
+  const root = mkdtempSync(join(tmpdir(), "hook-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const stub = join(root, name);
+  mkdirSync(dirname(stub), { recursive: true });
+  if (gitleaks !== null) writeFileSync(stub, gitleaks, { mode });
+  const env = { ...process.env, GIT_CONFIG_GLOBAL: join(root, "gitconfig"), GIT_CONFIG_NOSYSTEM: "1", GITLEAKS_BIN: native ? stub : slash(stub) };
+  writeFileSync(env.GIT_CONFIG_GLOBAL, "[user]\n\tname = t\n\temail = t@example.invalid\n");
+  const repo = join(root, "repo");
+  cpSync(CHECKS, join(repo, "checks"), { recursive: true, filter: (path) => !path.endsWith("README.md") });
+  const gitIn = (cwd) => (...args) => run("git", args, { cwd, env });
+  const git = gitIn(repo);
+  const install = () => run(process.execPath, ["checks/install-hook.js"], { cwd: repo, env });
+  await git("init", "-q");
+  await git("add", "-A");
+  await git("commit", "-q", "-m", "checks");
+  const installed = await install();
+  assert.equal(installed.status, 0, installed.stderr);
+  return { root, repo, env, git, gitIn, install };
+}
+
+const commits = async (git) => (await git("rev-list", "--count", "HEAD")).stdout.trim();
+
+async function stage(repo, git, text) {
+  writeFileSync(join(repo, "note.md"), text);
+  await git("add", "note.md");
+}
+
+const NOT_SCANNED = /pre-commit WARNING: NOT SCANNED FOR SECRETS\. checks\/pre-commit\.sh did not scan the staged files with gitleaks\.\r?\nWhy: [^\r\n]+\r?\nFix: [^\r\n]+/;
+const REFUSED = /refused/;
+const SCAN_AFTER = /Then: once git makes this commit, scan it with: ([^\r\n]+)/;
+const LOG_OPTS = '--log-opts="-1 --diff-merges=first-parent"';
+// The printed commands are the same fixed text whether GITLEAKS_BIN is set or not.
+const SCAN_TEXT = `gitleaks git --redact ${LOG_OPTS}`;
+const FIX_TEXT = "gitleaks git --pre-commit --staged --redact";
+const OVERRIDE = /^You set GITLEAKS_BIN for this commit: run that program in place of gitleaks\.\r?$/m;
+const ARG_LINES = ["[git]", "[--redact]", "[--log-opts=-1 --diff-merges=first-parent]"];
+const NO_COMMIT = /Then: no commit was made, since the checks below refuse it\./;
+const CONTROL = /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/;
+
+const pathKey = (env) => Object.keys(env).find((name) => name.toUpperCase() === "PATH");
+const find = (name, path) => {
+  for (const dir of path.split(delimiter)) {
+    for (const ext of process.platform === "win32" ? [".exe", ""] : [""]) {
+      const file = join(dir, name + ext);
+      if (existsSync(file) && statSync(file).isFile()) return file;
+    }
+  }
+};
+const REAL_GITLEAKS = find("gitleaks", process.env[pathKey(process.env)]);
+
+// git's own shell: the PATH Git for Windows recommends holds git.exe and no sh.
+const gitSays = (...args) => {
+  try {
+    return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    return "";
+  }
+};
+const GIT_SHELL = (() => {
+  const named = gitSays("var", "GIT_SHELL_PATH");
+  if (named && existsSync(named)) return named;
+  let dir = gitSays("--exec-path");
+  for (let up = 0; dir && up < 4; up++) {
+    dir = dirname(dir);
+    for (const file of ["bin/sh", "bin/sh.exe", "usr/bin/sh", "usr/bin/sh.exe"]) if (existsSync(join(dir, file))) return join(dir, file);
+  }
+})();
+const needsShell = { skip: GIT_SHELL ? false : "git names no shell (git var GIT_SHELL_PATH, or bin/sh beside git --exec-path)" };
+
+// A PATH that holds git, sh and the tools the hook calls, and no node, wherever node lives.
+const HOOK_TOOLS = ["git", "cat", "grep", "head", "mktemp", "rm", "sed", "sort", "tr"];
+const withoutNode = (repo, env) => {
+  const key = pathKey(env);
+  const bin = join(dirname(repo), "bin");
+  mkdirSync(bin);
+  const search = [env[key], dirname(GIT_SHELL)].join(delimiter);
+  const tools = new Map([["sh", GIT_SHELL]]);
+  for (const tool of HOOK_TOOLS) {
+    const real = find(tool, search);
+    assert.ok(real, `${tool} is neither on PATH nor beside git's shell, so the test cannot build a PATH for the hook`);
+    tools.set(tool, real);
+  }
+  const dirs = new Map([[bin, "the test's links"]]);
+  for (const [tool, real] of tools) {
+    // Windows looks for an .exe's DLLs beside the file it starts from, so a link to git.exe cannot start: use its own folder.
+    if (process.platform === "win32") dirs.set(dirname(real), dirs.has(dirname(real)) ? `${dirs.get(dirname(real))}, ${tool}` : tool);
+    else symlinkSync(real, join(bin, tool));
+  }
+  for (const [dir, holds] of dirs) assert.ok(!existsSync(join(dir, "node")) && !existsSync(join(dir, "node.exe")), `node shares ${dir} with ${holds} here, so this test cannot hide it`);
+  return { ...env, [key]: [...dirs.keys()].join(delimiter) };
+};
+
+const SCRIPT = "\x1b[31mPWNED\x07 \x00\x01 run me\n";
+const GITLEAKS_BROKEN = [
+  { state: "is not installed", stub: null, refuse: true, why: /Why: gitleaks is not installed: GITLEAKS_BIN names no program on PATH or on disk\.\r?\nFix: install gitleaks/ },
+  { state: "crashes without a report", stub: CRASH, refuse: true, why: /Why: gitleaks exited 1 without a findings report\.[^\r\n]*\r?\nFix: [^\r\n]*\r?\n[\s\S]*FTL unable to load gitleaks config/ },
+  { state: "exits 0 without a report", stub: "#!/bin/sh\nexit 0\n", why: /Why: gitleaks exited 0 without a findings report\./ },
+  { state: "exists but is not executable", stub: SCRIPT, mode: 0o644, why: /Why: (GITLEAKS_BIN names a file that exists but will not execute\.|gitleaks could not run that command \(exit 126\): .+)/ },
+  { state: "rejects a flag with exit 126", stub: "#!/bin/sh\necho 'Error: unknown flag: --log-level' >&2\nexit 126\n", why: /Why: gitleaks could not run that command \(exit 126\): Error: unknown flag: --log-level\. Its output follows/ },
+  { state: "is a text file named gitleaks.exe", stub: SCRIPT, name: "gitleaks.exe", why: /Why: (GITLEAKS_BIN names a file that exists but will not execute|gitleaks could not run that command \(exit 12[67]\)|gitleaks exited \d+ without a findings report)/ },
+  { state: "prints raw bytes and crashes", stub: "#!/bin/sh\nprintf '\\033[2J\\007\\001MZ garbage\\n' >&2\nexit 1\n", why: /Why: gitleaks exited 1 without a findings report\./ },
+  { state: "is a broken MZ binary", stub: `MZ\x90\x00\x03\x00${SCRIPT}`, name: "gitleaks.exe", why: /Why: (GITLEAKS_BIN names a file that exists but will not execute|gitleaks could not run that command \(exit 12[67]\)|gitleaks exited \d+ without a findings report)/ },
+];
+
+// Crashes in the hook's pre-commit scan, and runs the real gitleaks for any other command, such as the scan the warning prints.
+const DELEGATE = (real) => `#!/bin/sh\nfor a; do [ "$a" = --pre-commit ] && { echo 'FTL unable to load gitleaks config' >&2; exit 1; }; done\nexec "${slash(real)}" "$@"\n`;
+// Crashes in the hook's pre-commit scan, and prints each argument of any other command on its own line, in brackets.
+const ARGS = `#!/bin/sh\nfor a; do [ "$a" = --pre-commit ] && { echo 'FTL unable to load gitleaks config' >&2; exit 1; }; done\nfor a; do printf '[%s]\\n' "$a"; done\n`;
+const token = () => {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  return `ghp_${[...randomBytes(36)].map((byte) => chars[byte % chars.length]).join("")}`;
+};
+
+function stubFirstOnPath(root, env) {
+  const bin = join(root, "stub-bin");
+  mkdirSync(bin, { recursive: true });
+  writeFileSync(join(bin, "gitleaks"), ARGS, { mode: 0o755 });
+  const key = pathKey(env);
+  return { ...env, [key]: [bin, env[key]].join(delimiter) };
+}
+
+async function scanAfter(repo, env, stderr) {
+  const command = SCAN_AFTER.exec(stderr)?.[1];
+  assert.ok(command, `no scan command in:\n${stderr}`);
+  return run(GIT_SHELL, ["-c", command], { cwd: repo, env });
+}
+
+// GITLEAKS_BIN paths whose printed commands must still run when pasted into sh. Windows forbids " in a file name, and its own paths use backslashes.
+const ODD_PATHS = [
+  { state: "an apostrophe", name: join("o'brien", "gitleaks") },
+  { state: "a space", name: join("with space", "gitleaks") },
+  { state: "a dollar sign", name: join("cost$HOME", "gitleaks") },
+  { state: "a backtick", name: join("tick`id`", "gitleaks") },
+  { state: "a double quote", name: join('say"hi', "gitleaks"), skip: process.platform === "win32" && "Windows forbids \" in a file name" },
+  process.platform === "win32"
+    ? { state: "backslashes", name: "gitleaks", native: true }
+    : { state: "a backslash", name: join("back\\slash", "gitleaks"), native: true },
+  process.platform === "win32"
+    ? { state: "a backslash before a dollar sign", name: join("$HOME", "gitleaks"), native: true }
+    : { state: "a backslash before a dollar sign", name: join("back\\$HOME", "gitleaks"), native: true },
+  { state: "a command substitution", name: join("$(touch pwned)", "gitleaks") },
+];
+
+const CHECKS_CANNOT_RUN = [
+  ["node is not on PATH", withoutNode, /pre-commit refused by checks:\r?\nchecks\/run\.js cannot run: node is not installed\. Fix: install Node 22 or later/],
+  ["checks/run.js is missing", (repo) => rmSync(join(repo, "checks", "run.js")), /pre-commit refused by checks:\r?\nchecks\/run\.js cannot run: it is missing from this checkout\. Fix: /],
+  ["checks/pre-commit.sh is missing", (repo) => rmSync(join(repo, "checks", "pre-commit.sh")), /pre-commit refused: .+checks\/pre-commit\.sh is missing, so no check ran\. Fix: /],
+];
+
+describe("the pre-commit hook", { concurrency: true }, () => {
+  test("a staged em dash makes the hook refuse the commit, with the file, line and fix", async (t) => {
+    const { repo, git } = await clone(t);
+    await stage(repo, git, "fine\nbad \u2014 here\n");
+    const commit = await git("commit", "-m", "add a note");
+    assert.notEqual(commit.status, 0);
+    assert.match(commit.stderr, /pre-commit refused by checks/);
+    assert.match(commit.stderr, /note\.md:2:5: em dash\. Rewrite the sentence/);
+    assert.equal(await commits(git), "1");
+  });
+
+  test("the checks judge the staged files, not the working tree", async (t) => {
+    const { repo, git } = await clone(t);
+    await stage(repo, git, "bad \u2014 staged\n");
+    writeFileSync(join(repo, "note.md"), "fixed only in the working tree\n");
+    assert.notEqual((await git("commit", "-m", "staged dash")).status, 0);
+    await git("add", "note.md");
+    writeFileSync(join(repo, "note.md"), "bad \u2014 unstaged\n");
+    writeFileSync(join(repo, "untracked.md"), "bad \u2014 untracked\n");
+    const commit = await git("commit", "-m", "clean staged note");
+    assert.equal(commit.status, 0, commit.stderr);
+    assert.equal(await commits(git), "2");
+  });
+
+  test("a file marked with git add -N stays out of the checks, as it stays out of the commit", async (t) => {
+    const { repo, git } = await clone(t);
+    writeFileSync(join(repo, "AGENTS.md"), "# rules\n");
+    const intent = await git("add", "-N", "AGENTS.md");
+    assert.equal(intent.status, 0, intent.stderr);
+    await stage(repo, git, "fine\n");
+    const commit = await git("commit", "-m", "add a note");
+    assert.equal(commit.status, 0, commit.stderr);
+    assert.equal(await commits(git), "2");
+  });
+
+  for (const { state, stub, why, name, mode, refuse } of GITLEAKS_BROKEN) {
+    test(`a gitleaks that ${state} lets a clean commit through with the not-scanned warning and the scan to run after, and no refusal`, async (t) => {
+      const { repo, git } = await clone(t, stub, { name, mode });
+      await stage(repo, git, "fine\n");
+      const commit = await git("commit", "-m", "add a note");
+      assert.equal(commit.status, 0, commit.stderr);
+      assert.match(commit.stderr, NOT_SCANNED);
+      assert.match(commit.stderr, why);
+      assert.match(commit.stderr, SCAN_AFTER);
+      assert.doesNotMatch(commit.stderr, REFUSED);
+      assert.doesNotMatch(commit.stderr, CONTROL);
+      if (stub !== null) assert.doesNotMatch(commit.stderr, /is not installed/);
+      assert.equal(await commits(git), "2");
+    });
+
+    // The refusal does not depend on how gitleaks broke, so two kinds cover it and keep npm test short.
+    if (!refuse) continue;
+    test(`a gitleaks that ${state} still lets a failing check refuse the commit, and says no commit was made`, async (t) => {
+      const { repo, git } = await clone(t, stub, { name, mode });
+      await stage(repo, git, "bad \u2014 here\n");
+      const commit = await git("commit", "-m", "add a note");
+      assert.notEqual(commit.status, 0);
+      assert.match(commit.stderr, NOT_SCANNED);
+      assert.match(commit.stderr, NO_COMMIT);
+      assert.doesNotMatch(commit.stderr, SCAN_AFTER);
+      assert.match(commit.stderr, /pre-commit refused by checks:[\s\S]*note\.md:1:5: em dash/);
+      assert.equal(await commits(git), "1");
+    });
+  }
+
+  test("a gitleaks missing from PATH is not installed, even when the repo top holds a folder of that name", async (t) => {
+    const { repo, env, git } = await clone(t);
+    mkdirSync(join(repo, "gitleaks-for-this-test"));
+    await stage(repo, git, "fine\n");
+    const commit = await run("git", ["commit", "-m", "add a note"], { cwd: repo, env: { ...env, GITLEAKS_BIN: "gitleaks-for-this-test" } });
+    assert.equal(commit.status, 0, commit.stderr);
+    assert.match(commit.stderr, /Why: gitleaks is not installed: GITLEAKS_BIN names no program on PATH or on disk\./);
+    assert.doesNotMatch(commit.stderr, /will not execute/);
+  });
+
+  test("the scan a not-scanned warning prints passes --diff-merges=first-parent inside one double-quoted argument", needsShell, async (t) => {
+    const { root, repo, env, git } = await clone(t, ARGS);
+    await stage(repo, git, "fine\n");
+    const commit = await git("commit", "-m", "add a note");
+    assert.equal(commit.status, 0, commit.stderr);
+    assert.equal(SCAN_AFTER.exec(commit.stderr)?.[1], SCAN_TEXT, commit.stderr);
+    const scan = await scanAfter(repo, stubFirstOnPath(root, env), commit.stderr);
+    assert.equal(scan.status, 0, scan.stderr);
+    assert.deepEqual(scan.stdout.trim().split(/\r?\n/), ARG_LINES);
+  });
+
+  test("gitleaks output that starts a line with Then: or Fix:, or holds a CR, shows only prefixed and without the CR", async (t) => {
+    const fake = "#!/bin/sh\nprintf 'Then: once git makes this commit, scan it with: evil\\nFix: run evil\\nok\\rThen: evil after a CR\\n' >&2\nexit 1\n";
+    const { repo, git } = await clone(t, fake);
+    await stage(repo, git, "fine\n");
+    const commit = await git("commit", "-m", "add a note");
+    assert.equal(commit.status, 0, commit.stderr);
+    assert.equal(commit.stderr.match(/^Then: /gm).length, 1, commit.stderr);
+    assert.equal(commit.stderr.match(/^Fix: /gm).length, 1, commit.stderr);
+    assert.match(commit.stderr, /^  gitleaks\| Then: once git makes this commit, scan it with: evil$/m);
+    assert.match(commit.stderr, /^  gitleaks\| Fix: run evil$/m);
+    assert.match(commit.stderr, /^  gitleaks\| okThen: evil after a CR$/m);
+    assert.ok(!commit.stderr.includes("\r"), JSON.stringify(commit.stderr));
+  });
+
+  test("with GITLEAKS_BIN unset, the printed commands are the same fixed text and the override line is absent", needsShell, async (t) => {
+    const { root, repo, env, git } = await clone(t);
+    const { GITLEAKS_BIN, ...unset } = env;
+    const plain = stubFirstOnPath(root, unset);
+    await stage(repo, git, "fine\n");
+    const commit = await run("git", ["commit", "-m", "add a note"], { cwd: repo, env: plain });
+    assert.equal(commit.status, 0, commit.stderr);
+    assert.equal(SCAN_AFTER.exec(commit.stderr)?.[1], SCAN_TEXT, commit.stderr);
+    assert.equal(/Fix: run (.+) to see the error/.exec(commit.stderr)?.[1], FIX_TEXT, commit.stderr);
+    assert.doesNotMatch(commit.stderr, /You set GITLEAKS_BIN/);
+    const scan = await scanAfter(repo, plain, commit.stderr);
+    assert.deepEqual(scan.stdout.trim().split(/\r?\n/), ARG_LINES);
+  });
+
+  for (const { state, name, native, skip } of ODD_PATHS) {
+    test(`with ${state} in the gitleaks path, the printed commands are the fixed text, no path character shows and nothing runs from it`, { skip: skip || needsShell.skip }, async (t) => {
+      const { root, repo, env, git } = await clone(t, ARGS, { name, native });
+      await stage(repo, git, "fine\n");
+      const commit = await git("commit", "-m", "add a note");
+      assert.equal(commit.status, 0, commit.stderr);
+      assert.equal(SCAN_AFTER.exec(commit.stderr)?.[1], SCAN_TEXT, commit.stderr);
+      const fix = /Fix: run (.+) to see the error/.exec(commit.stderr)?.[1];
+      assert.equal(fix, FIX_TEXT, commit.stderr);
+      assert.match(commit.stderr, OVERRIDE);
+      const marker = dirname(name) === "." ? root : dirname(name);
+      assert.ok(!commit.stderr.includes(marker), `the path's folder ${marker} shows in:\n${commit.stderr}`);
+      const stubbed = stubFirstOnPath(root, env);
+      const scan = await scanAfter(repo, stubbed, commit.stderr);
+      const rerun = await run(GIT_SHELL, ["-c", fix], { cwd: repo, env: stubbed });
+      assert.ok(!existsSync(join(repo, "pwned")) && !existsSync(join(root, "pwned")), "a printed command ran code from the path");
+      assert.deepEqual(scan.stdout.trim().split(/\r?\n/), ARG_LINES);
+      assert.equal(rerun.status, 1, rerun.stderr);
+      assert.match(rerun.stderr, /^FTL unable to load gitleaks config\r?\n$/);
+    });
+  }
+
+  const realGitleaks = { skip: !REAL_GITLEAKS ? "gitleaks is not on PATH" : needsShell.skip };
+
+  test("the scan a not-scanned warning prints finds a secret in a normal commit", realGitleaks, async (t) => {
+    const { repo, env, git } = await clone(t, DELEGATE(REAL_GITLEAKS));
+    writeFileSync(join(repo, "leak.txt"), `token = ${token()}\n`);
+    await git("add", "leak.txt");
+    const commit = await git("commit", "-m", "add a leak");
+    assert.equal(commit.status, 0, commit.stderr);
+    const scan = await scanAfter(repo, env, commit.stderr);
+    assert.equal(scan.status, 1, scan.stdout + scan.stderr);
+    assert.match(scan.stdout + scan.stderr, /leaks found: [1-9]/);
+  });
+
+  test("the scan a not-scanned warning prints finds a secret in a conflicted merge's resolution", realGitleaks, async (t) => {
+    const { repo, env, git } = await clone(t, DELEGATE(REAL_GITLEAKS));
+    writeFileSync(join(repo, "conf.txt"), "base\n");
+    await git("add", "conf.txt");
+    await git("commit", "-q", "-m", "base");
+    await git("checkout", "-q", "-b", "side");
+    writeFileSync(join(repo, "conf.txt"), "side\n");
+    await git("commit", "-q", "-am", "side");
+    await git("checkout", "-q", "-");
+    writeFileSync(join(repo, "conf.txt"), "main\n");
+    await git("commit", "-q", "-am", "main");
+    assert.notEqual((await git("merge", "side")).status, 0, "the merge should conflict");
+    writeFileSync(join(repo, "conf.txt"), `token = ${token()}\n`);
+    await git("add", "conf.txt");
+    const commit = await git("commit", "--no-edit");
+    assert.equal(commit.status, 0, commit.stderr);
+    assert.equal((await git("rev-list", "--parents", "-1", "HEAD")).stdout.trim().split(" ").length, 3, "HEAD should be a merge");
+    const scan = await scanAfter(repo, env, commit.stderr);
+    assert.equal(scan.status, 1, scan.stdout + scan.stderr);
+    assert.match(scan.stdout + scan.stderr, /leaks found: [1-9]/);
+  });
+
+  test("a gitleaks that finds a secret refuses the commit with the file and fix, and no not-scanned warning", async (t) => {
+    const { repo, git } = await clone(t, FIND);
+    await stage(repo, git, "fine\n");
+    const commit = await git("commit", "-m", "add a note");
+    assert.notEqual(commit.status, 0);
+    assert.match(commit.stderr, /pre-commit refused by gitleaks:\r?\ngitleaks found a secret in: note\.md\. Fix: take it out of the staged file/);
+    assert.doesNotMatch(commit.stderr, /NOT SCANNED/);
+    assert.equal(await commits(git), "1");
+  });
+
+  for (const [state, breakIt, message] of CHECKS_CANNOT_RUN) {
+    test(`when ${state}, the hook refuses the commit and says how to fix it`, breakIt === withoutNode ? needsShell : {}, async (t) => {
+      const { repo, env, git } = await clone(t);
+      await stage(repo, git, "fine\n");
+      const commitEnv = breakIt(repo, env) ?? env;
+      const commit = await run("git", ["commit", "-m", "add a note"], { cwd: repo, env: commitEnv });
+      assert.notEqual(commit.status, 0);
+      assert.match(commit.stderr, message);
+      assert.equal(await commits(git), "1");
+    });
+  }
+
+  test("npm run hooks reinstalls its own hook and keeps one it did not write", async (t) => {
+    const { repo, install } = await clone(t);
+    assert.equal((await install()).status, 0);
+    const other = join(repo, ".git", "hooks", "pre-commit");
+    writeFileSync(other, PASS);
+    const refused = await install();
+    assert.equal(refused.status, 1);
+    assert.match(refused.stderr, /holds another pre-commit hook\. Move it out, or call it from checks\/pre-commit\.sh/);
+    assert.equal(readFileSync(other, "utf8"), PASS);
+  });
+
+  test("a worktree's commit reaches the hook through a global hooks path that chains to the repo's hook", async (t) => {
+    const { root, env, git, gitIn } = await clone(t);
+    const global = join(root, "global-hooks");
+    mkdirSync(global);
+    writeFileSync(join(global, "pre-commit"), '#!/bin/sh\necho "global hook ran" >&2\nexec "$(git rev-parse --git-common-dir)/hooks/pre-commit" "$@"\n', { mode: 0o755 });
+    appendFileSync(env.GIT_CONFIG_GLOBAL, `[core]\n\thooksPath = ${slash(global)}\n`);
+    const side = join(root, "side");
+    await git("worktree", "add", "-q", "-b", "side", side);
+    const sideGit = gitIn(side);
+    await stage(side, sideGit, "bad \u2014 here\n");
+    const commit = await sideGit("commit", "-m", "add a note");
+    assert.notEqual(commit.status, 0);
+    assert.match(commit.stderr, /global hook ran[\s\S]*pre-commit refused by checks[\s\S]*note\.md:1:5: em dash/);
+  });
+});

@@ -8,6 +8,7 @@
     "check": "node checks/run.js",
     "check:title": "node checks/run-pr-title.js",
     "snapshot": "node checks/write-snapshot.js",
-    "check:deny": "node checks/run-deny-list.js"
+    "check:deny": "node checks/run-deny-list.js",
+    "hooks": "node checks/install-hook.js"
   }
 }

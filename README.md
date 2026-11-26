@@ -28,10 +28,11 @@ Orchestrator → control the flow → structure outputs → execute actions → 
 
 ## Checks
 
-Node 22 or later. No dependencies.
+Node 22 or later. No dependencies. The pre-commit hook that `npm run hooks` installs also runs gitleaks, and warns that it did not scan when gitleaks is missing.
 
 ```sh
 npm test       # the checks' own tests
 npm run check  # the checks against this repo
 npm run check:title -- "<title>"  # a PR title against decisions/0005
+npm run hooks  # once per clone: gitleaks and the checks on each git commit
 ```
