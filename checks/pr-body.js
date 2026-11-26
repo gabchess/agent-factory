@@ -30,7 +30,8 @@ export const TEMPLATE = [
 const markdown = new MarkdownIt({ html: true });
 const COMMENT = /<!--(?:-?>|[^]*?(?:-->|$))/g;
 const WORD = /[\p{L}\p{N}]/u;
-const IMAGE = /<(?:img|video)\b/i;
+// A tag name ends at a space, a slash or ">", so <title-bar> is no <title> and <img-x> is no <img>.
+const IMAGE = /<(?:img|video)(?=[\s/>])/i;
 const PLACEHOLDERS = TEMPLATE.flatMap(({ fields }) => fields.map(({ placeholder }) => placeholder));
 const CODE = new Set(["fence", "code_block"]);
 
@@ -48,8 +49,8 @@ const pieces = (body) =>
 // The text a reader sees in one piece. GitHub hides comments and shows no tag or attribute of raw HTML.
 // <br> and a block tag, such as <p>, <li> or <summary>, end the line; every other tag vanishes, as <b> or <wbr> does,
 // except the tags GitHub's tag filter shows as text, such as <textarea>.
-const SHOWN_TAG = /^<\/?(?:iframe|noembed|noframes|plaintext|script|style|textarea|title|xmp)\b/i;
-const BREAK_TAG = /^<\/?(?:address|article|aside|blockquote|br|dd|details|div|dl|dt|figcaption|figure|footer|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|summary|table|tbody|td|tfoot|th|thead|tr|ul)\b/i;
+const SHOWN_TAG = /^<\/?(?:iframe|noembed|noframes|plaintext|script|style|textarea|title|xmp)(?=[\s/>])/i;
+const BREAK_TAG = /^<\/?(?:address|article|aside|blockquote|br|dd|details|div|dl|dt|figcaption|figure|footer|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|summary|table|tbody|td|tfoot|th|thead|tr|ul)(?=[\s/>])/i;
 const shown = ({ type, content }) =>
   type === "text" || type === "code_inline" || type === "image" || CODE.has(type)
     ? content
