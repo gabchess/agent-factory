@@ -36,9 +36,9 @@ The deny list check, which reads a harness's settings instead of the repo:
 
 - `deny-list.js`: fails a Claude Code `settings.json` whose `permissions.deny` lacks a rule from `templates/deny-list/claude-code.json`, and a `templates/deny-list/list.json` entry with no Claude Code mapping. `run-deny-list.js` runs it on the path passed as an argument: `npm run check:deny -- ~/.claude/settings.json`. CI never runs it, since the file lives on each machine. Its test reads `test/fixtures/deny-list/pass/settings.json` and `fail/settings.json`.
 
-The pre-commit hook, which git runs on every commit once `npm run hooks` has installed it:
+The pre-commit hook, which `git commit` runs once `npm run hooks` has installed it (a clean `git merge`, `git cherry-pick`, `git revert` and `git rebase` skip it):
 
-- `pre-commit.sh`: runs gitleaks and `run.js --staged` at once on the staged files, and refuses the commit when one fails or cannot run, with its fix. Tests stay out of it, since `npm test` alone takes longer than its 3 second budget ([ADR 0008](../decisions/0008-commits-pass-the-fast-checks-in-a-pre-commit-hook.md)).
+- `pre-commit.sh`: runs gitleaks and `run.js --staged` at once on the staged files. A found secret, a failing check or a check that cannot run refuses the commit, with its fix. A gitleaks that is missing or exits without a findings report prints a warning that starts `pre-commit WARNING: NOT SCANNED FOR SECRETS.` and leaves the decision to the checks. Tests stay out of it, since `npm test` alone takes longer than its 3 second budget ([ADR 0008](../decisions/0008-commits-pass-the-fast-checks-in-a-pre-commit-hook.md)).
 - `install-hook.js`: `npm run hooks` writes `pre-commit` into the `hooks/` folder of the clone's shared git directory, so every worktree runs its own `pre-commit.sh`. Git reaches it through the gitleaks hook in a global `core.hooksPath`, which chains to that folder, or directly when `core.hooksPath` is unset. It refuses to replace a hook it did not write. Its test is `test/pre-commit.test.js`.
 
 To copy the hook into another factory repo, copy both files and the `*.sh` line of `.gitattributes`, change `repo_checks` in `pre-commit.sh` to that repo's commit-time checks on its staged files, keep `gitleaks_scan`, and add the `npm run hooks` line of this repo's `AGENTS.md`, with the command that runs `install-hook.js` there.

@@ -1,9 +1,9 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { appendFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const CHECKS = fileURLToPath(new URL("../checks/", import.meta.url));
@@ -49,10 +49,24 @@ async function stage(repo, git, text) {
   await git("add", "note.md");
 }
 
-const GITLEAKS = [
-  ["is not installed", null, /pre-commit refused by gitleaks:\r?\ngitleaks cannot run: ".+" is not installed\. Fix: install gitleaks/],
-  ["finds a secret", FIND, /pre-commit refused by gitleaks:\r?\ngitleaks found a secret in: note\.md\. Fix: take it out of the staged file/],
-  ["fails without a report", CRASH, /FTL unable to load gitleaks config\r?\ngitleaks failed with exit 1 and wrote no report, so the staged files were not scanned\. Fix the error above/],
+const NOT_SCANNED = /pre-commit WARNING: NOT SCANNED FOR SECRETS\. checks\/pre-commit\.sh did not scan this commit with gitleaks\.\r?\nWhy: [^\r\n]+\r?\nFix: [^\r\n]+/;
+const REFUSED = /refused/;
+
+const withoutNode = (env) => {
+  const key = Object.keys(env).find((name) => name.toUpperCase() === "PATH");
+  const dirs = env[key].split(delimiter).filter((dir) => !existsSync(join(dir, "node")) && !existsSync(join(dir, "node.exe")));
+  return { ...env, [key]: dirs.join(delimiter) };
+};
+
+const GITLEAKS_BROKEN = [
+  ["is not installed", null, /Why: ".+" is not installed\.[^\r\n]*\r?\nFix: install gitleaks/],
+  ["crashes without a report", CRASH, /Why: gitleaks exited 1 without a findings report\.[^\r\n]*\r?\nFix: [^\r\n]*\r?\nFTL unable to load gitleaks config/],
+];
+
+const CHECKS_CANNOT_RUN = [
+  ["node is not on PATH", (repo, env) => withoutNode(env), /pre-commit refused by checks:\r?\nchecks\/run\.js cannot run: node is not installed\. Fix: install Node 22 or later/],
+  ["checks/run.js is missing", (repo) => rmSync(join(repo, "checks", "run.js")), /pre-commit refused by checks:\r?\nchecks\/run\.js cannot run: it is missing from this checkout\. Fix: /],
+  ["checks/pre-commit.sh is missing", (repo) => rmSync(join(repo, "checks", "pre-commit.sh")), /pre-commit refused: .+checks\/pre-commit\.sh is missing, so no check ran\. Fix: /],
 ];
 
 describe("the pre-commit hook", { concurrency: true }, () => {
@@ -89,11 +103,45 @@ describe("the pre-commit hook", { concurrency: true }, () => {
     assert.equal(await commits(git), "2");
   });
 
-  for (const [state, stub, message] of GITLEAKS) {
-    test(`a gitleaks that ${state} refuses the commit and says how to fix it`, async (t) => {
+  for (const [state, stub, why] of GITLEAKS_BROKEN) {
+    test(`a gitleaks that ${state} lets a clean commit through with the not-scanned warning, and no refusal`, async (t) => {
       const { repo, git } = await clone(t, stub);
       await stage(repo, git, "fine\n");
       const commit = await git("commit", "-m", "add a note");
+      assert.equal(commit.status, 0, commit.stderr);
+      assert.match(commit.stderr, NOT_SCANNED);
+      assert.match(commit.stderr, why);
+      assert.doesNotMatch(commit.stderr, REFUSED);
+      assert.equal(await commits(git), "2");
+    });
+
+    test(`a gitleaks that ${state} still lets a failing check refuse the commit`, async (t) => {
+      const { repo, git } = await clone(t, stub);
+      await stage(repo, git, "bad \u2014 here\n");
+      const commit = await git("commit", "-m", "add a note");
+      assert.notEqual(commit.status, 0);
+      assert.match(commit.stderr, NOT_SCANNED);
+      assert.match(commit.stderr, /pre-commit refused by checks:[\s\S]*note\.md:1:5: em dash/);
+      assert.equal(await commits(git), "1");
+    });
+  }
+
+  test("a gitleaks that finds a secret refuses the commit with the file and fix, and no not-scanned warning", async (t) => {
+    const { repo, git } = await clone(t, FIND);
+    await stage(repo, git, "fine\n");
+    const commit = await git("commit", "-m", "add a note");
+    assert.notEqual(commit.status, 0);
+    assert.match(commit.stderr, /pre-commit refused by gitleaks:\r?\ngitleaks found a secret in: note\.md\. Fix: take it out of the staged file/);
+    assert.doesNotMatch(commit.stderr, /NOT SCANNED/);
+    assert.equal(await commits(git), "1");
+  });
+
+  for (const [state, breakIt, message] of CHECKS_CANNOT_RUN) {
+    test(`when ${state}, the hook refuses the commit and says how to fix it`, async (t) => {
+      const { repo, env, git } = await clone(t);
+      await stage(repo, git, "fine\n");
+      const commitEnv = breakIt(repo, env) ?? env;
+      const commit = await run("git", ["commit", "-m", "add a note"], { cwd: repo, env: commitEnv });
       assert.notEqual(commit.status, 0);
       assert.match(commit.stderr, message);
       assert.equal(await commits(git), "1");

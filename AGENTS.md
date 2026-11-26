@@ -85,6 +85,6 @@ Other work:
 
 ## In this repo
 
-- When you start work in a clone, run `npm run hooks` once. Its pre-commit hook runs gitleaks and the checks on every commit ([ADR 0008](decisions/0008-commits-pass-the-fast-checks-in-a-pre-commit-hook.md)).
+- When you start work in a clone, run `npm run hooks` once. Its pre-commit hook runs gitleaks and the checks on each `git commit` ([ADR 0008](https://github.com/gabchess/agent-factory/blob/main/decisions/0008-commits-pass-the-fast-checks-in-a-pre-commit-hook.md)).
 - When you add a file to a top-level folder, read that folder's `README.md`.
 - When you add or change a check, read `checks/README.md`.
