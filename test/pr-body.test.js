@@ -49,6 +49,7 @@ test("each body that lacks what the pr skill or the checks' output needs fails w
   ]);
   assert.deepEqual(fails("no-sections"), NO_SECTIONS);
   assert.deepEqual(fails("hidden-sections"), NO_SECTIONS);
+  assert.deepEqual(fails("inline-comment"), [10, 18].map((line) => `line ${line} has an HTML comment inside it, which GitHub hides. Put the comment on lines of its own, or delete it.`));
   assert.deepEqual(fails("out-of-order"), [ORDER]);
   assert.deepEqual(fails("empty-template"), [NO_DIAGRAM, NO_BEFORE, NO_AFTER]);
   assert.deepEqual(fails("empty-sections"), [

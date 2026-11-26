@@ -1,3 +1,5 @@
+import { maskInlineCode } from "./markdown.js";
+
 const FENCE = /^\s*(`{3,}|~{3,})/;
 const HEADING = /^##\s+(.+?)\s*#*\s*$/;
 const HEAD_COMMAND = "git rev-parse HEAD";
@@ -14,14 +16,17 @@ const NO_COMMANDS = 'the checks\' output holds no check command. Write each one 
 const ORDER = 'the sections are out of order. Put them in the pr skill\'s order: "## Summary", "## Evidence", "## Merge danger".';
 
 // A comment block as CommonMark defines one: a line that starts with "<!--", through the first line holding "-->". GitHub shows none of it.
+// A comment inside a line, outside inline code, is refused instead of read around, so the check never guesses what GitHub hides.
 const COMMENT = /^ {0,3}<!--/;
+const INLINE_COMMENT = (line) => `line ${line} has an HTML comment inside it, which GitHub hides. Put the comment on lines of its own, or delete it.`;
 
 // Each section holds, in order, the prose lines and fenced code blocks under one "## " heading; the first holds what comes before any heading.
 function sections(lines) {
   const all = [{ name: null, items: [] }];
+  all.inline = [];
   let fence = null;
   let comment = false;
-  for (const line of lines) {
+  for (const [index, line] of lines.entries()) {
     const section = all.at(-1);
     if (fence) {
       const marker = line.match(FENCE)?.[1];
@@ -33,6 +38,7 @@ function sections(lines) {
       comment = !line.slice(comment ? 0 : line.indexOf("<!--") + 4).includes("-->");
       continue;
     }
+    if (/<!--|-->/.test(maskInlineCode(line))) all.inline.push(index + 1);
     const marker = line.match(FENCE)?.[1];
     if (marker) {
       fence = marker;
@@ -111,6 +117,7 @@ function skillSections(all) {
 
 export function check(body, { head, commands = [] } = {}) {
   const all = sections(body.replace(/\r\n/g, "\n").split("\n"));
+  if (all.inline.length) return all.inline.map(INLINE_COMMENT);
   const first = all[0].items[0];
   return [...checksOutput(first?.code ? first.lines : undefined, { head, commands }), ...skillSections(all)];
 }
