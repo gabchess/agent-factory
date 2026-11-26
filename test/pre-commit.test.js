@@ -56,6 +56,9 @@ const NOT_SCANNED = /pre-commit WARNING: NOT SCANNED FOR SECRETS\. checks\/pre-c
 const REFUSED = /refused/;
 const SCAN_AFTER = /Then: once git makes this commit, scan it with: ([^\r\n]+)/;
 const LOG_OPTS = '--log-opts="-1 --diff-merges=first-parent"';
+// The printed commands are fixed text: they name the reader's own $GITLEAKS_BIN, never the characters of its value.
+const SCAN_TEXT = `"$GITLEAKS_BIN" git --redact ${LOG_OPTS}`;
+const FIX_TEXT = '"$GITLEAKS_BIN" git --pre-commit --staged --redact';
 const NO_COMMIT = /Then: no commit was made, since the checks below refuse it\./;
 const CONTROL = /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/;
 
@@ -114,14 +117,14 @@ const withoutNode = (repo, env) => {
 
 const SCRIPT = "\x1b[31mPWNED\x07 \x00\x01 run me\n";
 const GITLEAKS_BROKEN = [
-  { state: "is not installed", stub: null, refuse: true, why: /Why: ".+" is not installed\.[^\r\n]*\r?\nFix: install gitleaks/ },
+  { state: "is not installed", stub: null, refuse: true, why: /Why: gitleaks is not installed: GITLEAKS_BIN names no program on PATH or on disk\.\r?\nFix: install gitleaks/ },
   { state: "crashes without a report", stub: CRASH, refuse: true, why: /Why: gitleaks exited 1 without a findings report\.[^\r\n]*\r?\nFix: [^\r\n]*\r?\n[\s\S]*FTL unable to load gitleaks config/ },
   { state: "exits 0 without a report", stub: "#!/bin/sh\nexit 0\n", why: /Why: gitleaks exited 0 without a findings report\./ },
-  { state: "exists but is not executable", stub: SCRIPT, mode: 0o644, why: /Why: (".+" exists but will not execute\.|gitleaks could not run that command \(exit 126\): .+)/ },
+  { state: "exists but is not executable", stub: SCRIPT, mode: 0o644, why: /Why: (GITLEAKS_BIN names a file that exists but will not execute\.|gitleaks could not run that command \(exit 126\): .+)/ },
   { state: "rejects a flag with exit 126", stub: "#!/bin/sh\necho 'Error: unknown flag: --log-level' >&2\nexit 126\n", why: /Why: gitleaks could not run that command \(exit 126\): Error: unknown flag: --log-level\. Its output follows/ },
-  { state: "is a text file named gitleaks.exe", stub: SCRIPT, name: "gitleaks.exe", why: /Why: (".+" exists but will not execute|gitleaks could not run that command \(exit 12[67]\)|gitleaks exited \d+ without a findings report)/ },
+  { state: "is a text file named gitleaks.exe", stub: SCRIPT, name: "gitleaks.exe", why: /Why: (GITLEAKS_BIN names a file that exists but will not execute|gitleaks could not run that command \(exit 12[67]\)|gitleaks exited \d+ without a findings report)/ },
   { state: "prints raw bytes and crashes", stub: "#!/bin/sh\nprintf '\\033[2J\\007\\001MZ garbage\\n' >&2\nexit 1\n", why: /Why: gitleaks exited 1 without a findings report\./ },
-  { state: "is a broken MZ binary", stub: `MZ\x90\x00\x03\x00${SCRIPT}`, name: "gitleaks.exe", why: /Why: (".+" exists but will not execute|gitleaks could not run that command \(exit 12[67]\)|gitleaks exited \d+ without a findings report)/ },
+  { state: "is a broken MZ binary", stub: `MZ\x90\x00\x03\x00${SCRIPT}`, name: "gitleaks.exe", why: /Why: (GITLEAKS_BIN names a file that exists but will not execute|gitleaks could not run that command \(exit 12[67]\)|gitleaks exited \d+ without a findings report)/ },
 ];
 
 // Crashes in the hook's pre-commit scan, and runs the real gitleaks for any other command, such as the scan the warning prints.
@@ -149,6 +152,10 @@ const ODD_PATHS = [
   process.platform === "win32"
     ? { state: "backslashes", name: "gitleaks", native: true }
     : { state: "a backslash", name: join("back\\slash", "gitleaks"), native: true },
+  process.platform === "win32"
+    ? { state: "a backslash before a dollar sign", name: join("$HOME", "gitleaks"), native: true }
+    : { state: "a backslash before a dollar sign", name: join("back\\$HOME", "gitleaks"), native: true },
+  { state: "a command substitution", name: join("$(touch pwned)", "gitleaks") },
 ];
 
 const CHECKS_CANNOT_RUN = [
@@ -228,7 +235,7 @@ describe("the pre-commit hook", { concurrency: true }, () => {
     await stage(repo, git, "fine\n");
     const commit = await run("git", ["commit", "-m", "add a note"], { cwd: repo, env: { ...env, GITLEAKS_BIN: "gitleaks-for-this-test" } });
     assert.equal(commit.status, 0, commit.stderr);
-    assert.match(commit.stderr, /Why: "gitleaks-for-this-test" is not installed\./);
+    assert.match(commit.stderr, /Why: gitleaks is not installed: GITLEAKS_BIN names no program on PATH or on disk\./);
     assert.doesNotMatch(commit.stderr, /will not execute/);
   });
 
@@ -237,15 +244,31 @@ describe("the pre-commit hook", { concurrency: true }, () => {
     await stage(repo, git, "fine\n");
     const commit = await git("commit", "-m", "add a note");
     assert.equal(commit.status, 0, commit.stderr);
-    assert.ok(SCAN_AFTER.exec(commit.stderr)?.[1].endsWith(` git --redact ${LOG_OPTS}`), commit.stderr);
+    assert.equal(SCAN_AFTER.exec(commit.stderr)?.[1], SCAN_TEXT, commit.stderr);
     const scan = await scanAfter(repo, env, commit.stderr);
     assert.equal(scan.status, 0, scan.stderr);
     assert.deepEqual(scan.stdout.trim().split(/\r?\n/), ["[git]", "[--redact]", "[--log-opts=-1 --diff-merges=first-parent]"]);
   });
 
+  test("with GITLEAKS_BIN unset, the printed scan names the bare word gitleaks", needsShell, async (t) => {
+    const { root, repo, env, git } = await clone(t);
+    const bin = join(root, "stub-bin");
+    mkdirSync(bin);
+    writeFileSync(join(bin, "gitleaks"), ARGS, { mode: 0o755 });
+    const { GITLEAKS_BIN, ...unset } = env;
+    const key = pathKey(unset);
+    const plain = { ...unset, [key]: [bin, unset[key]].join(delimiter) };
+    await stage(repo, git, "fine\n");
+    const commit = await run("git", ["commit", "-m", "add a note"], { cwd: repo, env: plain });
+    assert.equal(commit.status, 0, commit.stderr);
+    assert.equal(SCAN_AFTER.exec(commit.stderr)?.[1], `gitleaks git --redact ${LOG_OPTS}`, commit.stderr);
+    const scan = await scanAfter(repo, plain, commit.stderr);
+    assert.deepEqual(scan.stdout.trim().split(/\r?\n/), ["[git]", "[--redact]", "[--log-opts=-1 --diff-merges=first-parent]"]);
+  });
+
   for (const { state, name, native, skip } of ODD_PATHS) {
-    test(`with ${state} in the gitleaks path, the printed scan and fix commands run that gitleaks when pasted into sh`, { skip: skip || needsShell.skip }, async (t) => {
-      const { repo, env, git } = await clone(t, ARGS, { name, native });
+    test(`with ${state} in the gitleaks path, the printed scan and fix commands are fixed text that run that gitleaks in sh`, { skip: skip || needsShell.skip }, async (t) => {
+      const { root, repo, env, git } = await clone(t, ARGS, { name, native });
       await stage(repo, git, "fine\n");
       const commit = await git("commit", "-m", "add a note");
       assert.equal(commit.status, 0, commit.stderr);
@@ -257,6 +280,9 @@ describe("the pre-commit hook", { concurrency: true }, () => {
       const rerun = await run(GIT_SHELL, ["-c", fix], { cwd: repo, env });
       assert.equal(rerun.status, 1, rerun.stderr);
       assert.match(rerun.stderr, /^FTL unable to load gitleaks config\r?\n$/);
+      assert.ok(!existsSync(join(repo, "pwned")) && !existsSync(join(root, "pwned")), "a printed command ran code from the path");
+      assert.equal(SCAN_AFTER.exec(commit.stderr)?.[1], SCAN_TEXT, commit.stderr);
+      assert.equal(/Fix: run (.+) to see the error/.exec(commit.stderr)?.[1], FIX_TEXT, commit.stderr);
     });
   }
 

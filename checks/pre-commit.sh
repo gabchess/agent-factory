@@ -9,26 +9,28 @@ out=$(mktemp -d) || { echo "pre-commit refused: mktemp could not make a folder, 
 trap 'rm -rf "$out"' EXIT
 
 # gitleaks_scan returns 2 when gitleaks did not scan the staged files. The warning's first line never changes, so a log search finds it.
+# Every line that holds a variable goes out through printf '%s\n', since dash's echo reads backslash escapes.
 not_scanned() {
-  echo "pre-commit WARNING: NOT SCANNED FOR SECRETS. checks/pre-commit.sh did not scan the staged files with gitleaks."
-  echo "Why: $1"
-  echo "Fix: $2"
+  printf '%s\n' "pre-commit WARNING: NOT SCANNED FOR SECRETS. checks/pre-commit.sh did not scan the staged files with gitleaks." "Why: $1" "Fix: $2"
 }
 
-# The gitleaks command as printed for the reader to paste into sh. A value with only safe characters, such as the bare
-# name gitleaks, stays bare. Any other goes in double quotes, with \ " $ and ` escaped, since sh reads those inside them.
-case "$GITLEAKS" in
-  *[!A-Za-z0-9/._:+@=,-]*) prog="\"$(printf '%s' "$GITLEAKS" | sed 's/[\\"$`]/\\&/g')\"" ;;
-  *) prog="$GITLEAKS" ;;
-esac
+# The gitleaks command as printed for the reader to paste: fixed text, never the characters of GITLEAKS_BIN's value.
+# When GITLEAKS_BIN is set, the reader's own shell expands "$GITLEAKS_BIN".
+if [ -n "${GITLEAKS_BIN:-}" ]; then
+  prog='"$GITLEAKS_BIN"'
+  missing="GITLEAKS_BIN names no program on PATH or on disk"
+else
+  prog=gitleaks
+  missing="no gitleaks is on PATH"
+fi
 
 gitleaks_scan() {
   if ! command -v "$GITLEAKS" >/dev/null 2>&1; then
     # Only a path can exist without running; a bare name like "gitleaks" is looked up on PATH, never in this folder.
     if case "$GITLEAKS" in */* | *\\*) [ -e "$GITLEAKS" ] ;; *) false ;; esac; then
-      not_scanned "\"$GITLEAKS\" exists but will not execute." "reinstall gitleaks (winget install Gitleaks.Gitleaks, brew install gitleaks, or your package manager), or set GITLEAKS_BIN to a gitleaks that runs."
+      not_scanned "GITLEAKS_BIN names a file that exists but will not execute." "reinstall gitleaks (winget install Gitleaks.Gitleaks, brew install gitleaks, or your package manager), or set GITLEAKS_BIN to a gitleaks that runs."
     else
-      not_scanned "\"$GITLEAKS\" is not installed." "install gitleaks (winget install Gitleaks.Gitleaks, brew install gitleaks, or your package manager), or set GITLEAKS_BIN to its path."
+      not_scanned "gitleaks is not installed: $missing." "install gitleaks (winget install Gitleaks.Gitleaks, brew install gitleaks, or your package manager), or set GITLEAKS_BIN to its path."
     fi
     return 2
   fi
@@ -36,7 +38,7 @@ gitleaks_scan() {
   rc=$?
   files=$(grep -o '"File": *"[^"]*"' "$out/gitleaks.json" 2>/dev/null | sed 's/"File": *"//; s/"$//' | sort -u | tr '\n' ' ' | sed 's/ $//')
   if [ -n "$files" ]; then
-    echo "gitleaks found a secret in: $files. Fix: take it out of the staged file and pass it by its environment variable's name, rotate it if it is real, git add, then commit again."
+    printf '%s\n' "gitleaks found a secret in: $files. Fix: take it out of the staged file and pass it by its environment variable's name, rotate it if it is real, git add, then commit again."
     return 1
   fi
   [ "$rc" = 0 ] && [ -s "$out/gitleaks.json" ] && return 0
@@ -81,7 +83,7 @@ case "$(cat "$out/gitleaks.rc" 2>/dev/null)" in
     if [ "$refused" = 0 ]; then
       # --diff-merges=first-parent: without it, git log shows a merge commit with no diff, so the scan would miss a conflict's resolution.
       # Double quotes keep the value one argument in sh, and cmd.exe does not treat single quotes as quotes.
-      echo "Then: once git makes this commit, scan it with: $prog git --redact --log-opts=\"-1 --diff-merges=first-parent\"" >&2
+      printf '%s\n' "Then: once git makes this commit, scan it with: $prog git --redact --log-opts=\"-1 --diff-merges=first-parent\"" >&2
     else
       echo "Then: no commit was made, since the checks below refuse it." >&2
     fi
