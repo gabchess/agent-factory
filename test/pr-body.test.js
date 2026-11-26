@@ -144,6 +144,9 @@ test("with --head and --command, the body names the head and a code block quotes
   assert.deepEqual(check(body("pass/custom-tags"), { head: HEAD, commands: NPM }), []);
   assert.deepEqual(fails("quoted-attribute"), [noHead(HEAD), empty("Evidence", "Before", "<screenshot/output/failing test run>"), PIN]);
   assert.deepEqual(check(body("pass/html-text"), { head: HEAD, commands: NPM }), []);
+  // A raw HTML block shows the check no text, and holds an image only in a tag CommonMark reads as one.
+  assert.deepEqual(fails("unquoted-block"), [noHead(HEAD), empty("Evidence", "Before", "<screenshot/output/failing test run>"), PIN]);
+  assert.deepEqual(check(body("fail/hidden-image")), [empty("Merge Danger", "Blast Radius", "<one-word description>"), PIN]);
   assert.deepEqual(check(body("fail/entities")), [
     empty("Evidence", "Before", "<screenshot/output/failing test run>"),
     empty("Evidence", "After", "<screenshot/output/passing test run>"),

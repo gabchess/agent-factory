@@ -5,9 +5,9 @@
 ## Evidence
 
 - **Before:** the check read every `<` as a tag.
-  **After:**
+  **After:** at 1f0e2d3c4b5a69788796a5b4c3d2e1f0a9b8c7d6:
 
-  <p>p < 0.05 at 1f0e2d3c4b5a69788796a5b4c3d2e1f0a9b8c7d6, see <a title="x>y" href="https://example.com">the run</a></p>
+  <p>p < 0.05, see <a title="x>y" href="https://example.com">the run</a></p>
 
   ```text
   $ npm test

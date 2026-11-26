@@ -46,22 +46,22 @@ const pieces = (body) =>
       : [{ type: token.type, tag: token.tag, nesting: token.nesting, content: token.content, depth: token.level }],
   );
 
-// The text a reader sees in one piece. GitHub hides comments and shows no tag or attribute of raw HTML.
-// <br> and a block tag, such as <p>, <li> or <summary>, end the line; every other tag vanishes, as <b> or <wbr> does,
-// except the tags GitHub's tag filter shows as text, such as <textarea>.
+// The text a reader sees in one piece. A raw HTML block shows the check no text: the browser and GitHub's sanitizer,
+// not CommonMark, decide what it shows, so nothing in it fills a field or names the head.
+// An inline HTML piece is one tag or comment, as cmark-gfm draws it. It shows no text, except that <br> and a block tag
+// end the line and a tag GitHub's tag filter prints, such as <textarea>, shows as itself.
 const SHOWN_TAG = /^<\/?(?:iframe|noembed|noframes|plaintext|script|style|textarea|title|xmp)(?=[\s/>])/i;
 const BREAK_TAG = /^<\/?(?:address|article|aside|blockquote|br|dd|details|div|dl|dt|figcaption|figure|footer|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|summary|table|tbody|td|tfoot|th|thead|tr|ul)(?=[\s/>])/i;
-// Raw HTML split by markdown-it's own CommonMark grammar: each tag or comment is one html_inline piece, so "< 50" stays
-// text and a ">" in a quoted attribute stays in its tag, and the text between has its entities decoded, as "&nbsp;" is.
-const rawHtml = new MarkdownIt("zero", { html: true }).enable(["html_inline", "entity", "newline"]);
-const html = (content) => rawHtml.parseInline(content.replace(COMMENT, ""), {})[0]?.children ?? [];
 const tagText = (tag) => (tag.startsWith("<!--") ? "" : SHOWN_TAG.test(tag) ? tag : BREAK_TAG.test(tag) ? "\n" : "");
 const shown = ({ type, content }) =>
   type === "text" || type === "code_inline" || type === "image" || CODE.has(type)
     ? content
-    : type.startsWith("html")
-      ? html(content).map((piece) => (piece.type === "html_inline" ? tagText(piece.content) : shown(piece))).join("")
+    : type === "html_inline"
+      ? tagText(content)
       : type === "softbreak" || type === "hardbreak" ? "\n" : "";
+// The tags in raw HTML as CommonMark's grammar reads them, for the one thing raw HTML can count as: an image.
+const rawHtml = new MarkdownIt("zero", { html: true }).enable("html_inline");
+const tags = (content) => (rawHtml.parseInline(content.replace(COMMENT, ""), {})[0]?.children ?? []).filter(({ type }) => type === "html_inline");
 // The text a reader sees in a run of pieces: inline pieces run together as they render, and each block stands on its own lines.
 const visible = (pieces) => pieces.map((piece) => (piece.inline ? shown(piece) : `\n${shown(piece)}\n`)).join("");
 // That text with the template's placeholders taken out, in code or not.
@@ -104,7 +104,7 @@ function scopes(section, label, labels) {
 }
 
 const visual = (scope) =>
-  scope.some((piece) => (CODE.has(piece.type) && unplaced([piece]).trim()) || piece.type === "image" || (piece.type.startsWith("html") && html(piece.content).some((tag) => tag.type === "html_inline" && IMAGE.test(tag.content))));
+  scope.some((piece) => (CODE.has(piece.type) && unplaced([piece]).trim()) || piece.type === "image" || (piece.type.startsWith("html") && tags(piece.content).some((tag) => IMAGE.test(tag.content))));
 const filled = (scope) => WORD.test(unplaced(scope)) || visual(scope);
 
 function field(section, labels, heading, { label, placeholder }) {
