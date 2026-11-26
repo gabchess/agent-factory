@@ -28,10 +28,11 @@ Orchestrator → control the flow → structure outputs → execute actions → 
 
 ## Checks
 
-Node 22 or later. No dependencies.
+Node 22 or later, and one package: markdown-it, which the PR body check reads bodies with. Run `npm ci --ignore-scripts` once per clone, and again after a pull that changes `package-lock.json`.
 
 ```sh
 npm test       # the checks' own tests
 npm run check  # the checks against this repo
 npm run check:title -- "<title>"  # a PR title against decisions/0005
+npm run check:body -- --head "$(git rev-parse HEAD)" --command "npm test" --command "npm run check" body.md  # a PR body against the pr skill
 ```
