@@ -16,6 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - run: npm ci --ignore-scripts
       - run: printf '%s\n' "$PR_BODY" | node checks/run-pr-body.js --head "$PR_HEAD_SHA" --command "npm test" --command "npm run check"
         env:
           PR_BODY: ${{ github.event.pull_request.body }}

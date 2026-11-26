@@ -10,5 +10,8 @@
     "check:body": "node checks/run-pr-body.js",
     "snapshot": "node checks/write-snapshot.js",
     "check:deny": "node checks/run-deny-list.js"
+  },
+  "dependencies": {
+    "markdown-it": "15.0.3"
   }
 }

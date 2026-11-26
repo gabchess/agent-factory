@@ -1,123 +1,161 @@
-import { maskInlineCode } from "./markdown.js";
+import MarkdownIt from "markdown-it";
 
-const FENCE = /^\s*(`{3,}|~{3,})/;
-const HEADING = /^##\s+(.+?)\s*#*\s*$/;
-const HEAD_COMMAND = "git rev-parse HEAD";
-const LABEL = /\*\*(before|after):\*\*/i;
-const SECTIONS = [
-  ["Summary", "with a diagram, diff sketch or tree in a fenced code block"],
-  ["Evidence", "with **Before:** and **After:**"],
-  ["Merge danger", "with **Door:** and **Blast radius:**"],
+const COMMIT = "e484a8095543718ced436b9b49a8160ed4554000";
+export const SKILL_URL = `https://github.com/mattpocock/skills/blob/${COMMIT}/skills/engineering/pr/SKILL.md`;
+
+// The template in that skill: its sections in order, and the fields each asks to fill.
+// test/pr-body.test.js reads the same list from the copy in test/fixtures/pr-body/skill/ and fails when the two drift apart.
+export const TEMPLATE = [
+  { heading: "Summary", fields: [{ placeholder: "<diagram, diff-sketch, or tree>" }] },
+  {
+    heading: "Evidence",
+    fields: [
+      { label: "Before", placeholder: "<screenshot/output/failing test run>" },
+      { label: "After", placeholder: "<screenshot/output/passing test run>" },
+    ],
+  },
+  {
+    heading: "Merge Danger",
+    fields: [
+      { label: "Door", placeholder: "<one-way or two-way>" },
+      { placeholder: "<optional: description>" },
+      { label: "Blast Radius", placeholder: "<one-word description>" },
+      { placeholder: "<optional: potential ramifications of merge>" },
+    ],
+  },
 ];
 
-const OPEN = 'the body does not open with the checks\' output. Start it with one fenced code block, before "## Summary", that holds "$ git rev-parse HEAD" with the SHA it printed, then each check command as "$ <command>" with the last lines it printed.';
-const NO_HEAD = 'the checks\' output does not say which commit it ran on. Add "$ git rev-parse HEAD" and the SHA it printed to the opening code block.';
-const NO_COMMANDS = 'the checks\' output holds no check command. Write each one as "$ <command>", with the last lines it printed under it.';
-const ORDER = 'the sections are out of order. Put them in the pr skill\'s order: "## Summary", "## Evidence", "## Merge danger".';
+// GitHub renders a PR body with cmark-gfm. markdown-it follows the same CommonMark spec, so with raw HTML on
+// it finds code blocks, HTML blocks, comments, inline code and headings where GitHub does.
+const markdown = new MarkdownIt({ html: true });
+const COMMENT = /<!--(?:-?>|[^]*?(?:-->|$))/g;
+const WORD = /[\p{L}\p{N}]/u;
+const IMAGE = /<(?:img|video)\b/i;
+const PLACEHOLDERS = TEMPLATE.flatMap(({ fields }) => fields.map(({ placeholder }) => placeholder));
+const CODE = new Set(["fence", "code_block"]);
 
-// A comment block as CommonMark defines one: a line that starts with "<!--", through the first line holding "-->". GitHub shows none of it.
-// A comment inside a line, outside inline code, is refused instead of read around, so the check never guesses what GitHub hides.
-const COMMENT = /^ {0,3}<!--/;
-const INLINE_COMMENT = (line) => `line ${line} has an HTML comment inside it, which GitHub hides. Put the comment on lines of its own, or delete it.`;
+const PIN = `the sections and labels above are the pr skill's template at mattpocock/skills ${COMMIT.slice(0, 7)} (${SKILL_URL}). If your pr skill writes other ones, it is newer than this pin: write the body to this template, or move the pin as checks/README.md says.`;
+const ORDER = `the sections are out of order. Put them in the template's order: ${TEMPLATE.map(({ heading }) => `"## ${heading}"`).join(", ")}.`;
 
-// Each section holds, in order, the prose lines and fenced code blocks under one "## " heading; the first holds what comes before any heading.
-function sections(lines) {
-  const all = [{ name: null, items: [] }];
-  all.inline = [];
-  let fence = null;
-  let comment = false;
-  for (const [index, line] of lines.entries()) {
-    const section = all.at(-1);
-    if (fence) {
-      const marker = line.match(FENCE)?.[1];
-      if (marker && marker[0] === fence[0] && marker.length >= fence.length) fence = null;
-      else section.items.at(-1).lines.push(line);
+// The body as GitHub shows it: one piece per block token or inline token, in order, each with the depth of its block.
+const pieces = (body) =>
+  markdown.parse(body, {}).flatMap((token) =>
+    token.type === "inline"
+      ? token.children.map(({ type, content }) => ({ type, content, depth: token.level }))
+      : [{ type: token.type, tag: token.tag, nesting: token.nesting, content: token.content, depth: token.level }],
+  );
+
+const shown = ({ type, content }) =>
+  type === "text" || type === "code_inline" || type === "image" || CODE.has(type) ? content : type.startsWith("html") ? content.replace(COMMENT, "") : "";
+
+// Splits the pieces at each top-level "# " or "## " heading. A "## " section is named by its text in lower case.
+function sections(all) {
+  const found = [{ name: null, pieces: [] }];
+  for (let i = 0; i < all.length; i++) {
+    const { type, tag, depth } = all[i];
+    if (type !== "heading_open" || depth !== 0 || (tag !== "h1" && tag !== "h2")) {
+      found.at(-1).pieces.push(all[i]);
       continue;
     }
-    if (comment || COMMENT.test(line)) {
-      comment = !line.slice(comment ? 0 : line.indexOf("<!--") + 4).includes("-->");
-      continue;
-    }
-    if (/<!--|-->/.test(maskInlineCode(line))) all.inline.push(index + 1);
-    const marker = line.match(FENCE)?.[1];
-    if (marker) {
-      fence = marker;
-      section.items.push({ code: true, lines: [] });
-    } else if (HEADING.test(line)) {
-      all.push({ name: HEADING.exec(line)[1].toLowerCase(), items: [] });
-    } else if (line.trim()) {
-      section.items.push({ code: false, lines: [line] });
-    }
+    const end = all.findIndex((piece, j) => j > i && piece.type === "heading_close");
+    const name = all.slice(i + 1, end).filter(({ type }) => type === "text" || type === "code_inline").map(({ content }) => content).join("");
+    found.push({ name: tag === "h2" ? name.trim().toLowerCase() : null, pieces: [] });
+    i = end;
   }
-  return all;
+  return found;
 }
 
-const hasText = (item) => item.lines.some((line) => (item.code ? line : line.replace(/^[\s>*+-]+/, "")).trim());
+const labelAt = (section, i) =>
+  section[i].type === "strong_open" && section[i + 1]?.type === "text" && section[i + 2]?.type === "strong_close" ? section[i + 1].content.trim().toLowerCase() : undefined;
 
-// Maps each "$ <command>" line to whether a line of output follows it before the next command.
-function commandsRun(block) {
-  const ran = new Map();
-  block.forEach((line, index) => {
-    const command = /^\$ (.+)$/.exec(line.trim())?.[1].trim();
-    if (command === undefined) return;
-    const next = block.slice(index + 1).find((after) => after.trim());
-    ran.set(command, ran.get(command) || (next !== undefined && !next.trim().startsWith("$ ")));
-  });
-  return ran;
-}
-
-function checksOutput(block, { head, commands }) {
-  if (!block) return [OPEN];
-  const at = block.findIndex((line) => line.trim() === `$ ${HEAD_COMMAND}`);
-  const ranOn = at === -1 ? undefined : /^[0-9a-f]{40}$/.exec(block.slice(at + 1).find((line) => line.trim())?.trim() ?? "")?.[0];
-  const ran = commandsRun(block);
-  ran.delete(HEAD_COMMAND);
-  return [
-    !ranOn && NO_HEAD,
-    ranOn && head && ranOn !== head && `the checks' output ran on ${ranOn}, not the head ${head}. Run the checks again at the head and replace the opening code block.`,
-    !commands.length && ![...ran.values()].includes(true) && NO_COMMANDS,
-    ...commands.map((command) =>
-      !ran.has(command)
-        ? `the checks' output lacks "$ ${command}". Run it at the head and add the command and the last lines it printed to the opening code block.`
-        : !ran.get(command) && `"$ ${command}" has no output under it. Add the last lines it printed.`,
-    ),
-  ].filter(Boolean);
-}
-
-// True when a prose line holds the label and text or a code block follows it before the next label.
-function labelled(section, label) {
-  const start = section.items.findIndex((item) => !item.code && new RegExp(`\\*\\*${label}:\\*\\*`, "i").test(item.lines[0]));
-  if (start === -1) return false;
-  const after = section.items[start].lines[0].split(new RegExp(`\\*\\*${label}:\\*\\*`, "i"))[1];
-  const sameLine = after.split(LABEL)[0];
-  if (sameLine.trim()) return true;
-  if (LABEL.test(after)) return false;
-  for (const item of section.items.slice(start + 1)) {
-    if (!item.code && LABEL.test(item.lines[0])) return Boolean(item.lines[0].split(LABEL)[0].replace(/^[\s>*+-]+/, "").trim());
-    if (hasText(item)) return true;
+// What follows each "**<label>:**": the rest of its paragraph, then the blocks after it, up to the section's next label
+// or the end of the list item or quote that holds it.
+function scopes(section, label, labels) {
+  const found = [];
+  for (let i = 0; i < section.length; i++) {
+    if (labelAt(section, i) !== label) continue;
+    const scope = [];
+    for (let j = i + 3; j < section.length && !labels.includes(labelAt(section, j)); j++) {
+      if (section[j].nesting === -1 && section[j].depth < section[i].depth - 1) break;
+      scope.push(section[j]);
+    }
+    found.push(scope);
   }
-  return false;
+  return found;
 }
 
-function skillSections(all) {
-  const found = SECTIONS.map(([name]) => all.findIndex((section) => section.name === name.toLowerCase()));
+const visual = (scope) => scope.some(({ type, content }) => (CODE.has(type) && content.trim()) || type === "image" || (type.startsWith("html") && IMAGE.test(content.replace(COMMENT, ""))));
+const filled = (scope) => {
+  const prose = scope.filter(({ type }) => type === "text").map(({ content }) => content).join("");
+  return (
+    WORD.test(PLACEHOLDERS.reduce((rest, placeholder) => rest.replaceAll(placeholder, ""), prose)) ||
+    visual(scope) ||
+    scope.some(({ type, content }) => (type === "code_inline" && WORD.test(content)) || (type.startsWith("html") && WORD.test(shown({ type, content }).replace(/<[^>]*>/g, ""))))
+  );
+};
+
+function field(section, labels, heading, { label, placeholder }) {
+  if (!label) return visual(section) ? [] : [`"## ${heading}" holds no code block or image in place of "${placeholder}". Add one.`];
+  const found = scopes(section, `${label}:`.toLowerCase(), labels);
+  if (!found.length) return [`"## ${heading}" lacks "**${label}:**". Add it with "${placeholder}" filled in.`];
+  if (!found.every(filled)) return [`"**${label}:**" under "## ${heading}" holds nothing but "${placeholder}", a comment or markup. Write it after the label, before the next label or the end of its list item.`];
+  // A placeholder that offers choices, as "<one-way or two-way>" does, needs one of them.
+  const choices = /^<(\S+) or (\S+)>$/.exec(placeholder)?.slice(1);
+  const says = (scope) => choices.some((choice) => new RegExp(`(?<![\\p{L}-])${choice}(?![\\p{L}-])`, "iu").test(scope.map(shown).join(" ")));
+  if (choices && !found.every(says)) return [`"**${label}:**" under "## ${heading}" does not say ${choices.map((choice) => `"${choice}"`).join(" or ")}. Write one of them.`];
+  return [];
+}
+
+function template(all) {
+  const found = TEMPLATE.map(({ heading }) => all.findIndex(({ name }) => name === heading.toLowerCase()));
   const present = found.filter((index) => index !== -1);
-  const [summary, evidence, danger] = found.map((index) => all[index]);
-  const prose = (section) => section.items.filter((item) => !item.code).map((item) => item.lines[0]).join("\n");
+  const failures = [
+    ...TEMPLATE.filter((_, i) => found[i] === -1).map(({ heading }) => `the body has no "## ${heading}" section. Add it as the pr skill's template writes it.`),
+    ...(present.some((index, i) => index < present[i - 1]) ? [ORDER] : []),
+    ...TEMPLATE.flatMap(({ heading, fields }, i) => {
+      if (found[i] === -1) return [];
+      const labels = fields.filter(({ label }) => label).map(({ label }) => `${label}:`.toLowerCase());
+      return fields.filter(({ placeholder }) => !placeholder.startsWith("<optional:")).flatMap((each) => field(all[found[i]].pieces, labels, heading, each));
+    }),
+  ];
+  return failures.length ? [...failures, PIN] : [];
+}
+
+// A line of a code block holds the command, alone or after a "$ " prompt, and the rest of the line is its output.
+const typed = (line, command) => {
+  const rest = line.trim().replace(/^\$\s+/, "");
+  return rest.startsWith(command) && (rest.length === command.length || /\s/.test(rest[command.length])) ? rest.slice(command.length) : undefined;
+};
+
+// "output" when a code block quotes the command with output on its line or on the next line that is not another command.
+function quoted(blocks, command, commands) {
+  let state = "missing";
+  for (const lines of blocks) {
+    for (const [i, line] of lines.entries()) {
+      const rest = typed(line, command);
+      if (rest === undefined) continue;
+      const next = lines.slice(i + 1).find((after) => after.trim());
+      if (rest.trim() || (next !== undefined && !/^\s*\$\s/.test(next) && commands.every((other) => typed(next, other) === undefined))) return "output";
+      state = "bare";
+    }
+  }
+  return state;
+}
+
+function output(all, { head, commands }) {
+  const blocks = all.filter(({ type }) => CODE.has(type)).map(({ content }) => content.split("\n"));
+  const hex = all.map(shown).join("\n").toLowerCase().split(/[^0-9a-f]+/);
   return [
-    ...SECTIONS.map(([name, what], i) => found[i] === -1 && `the body has no "## ${name}" section. Add it ${what}, as the pr skill's template shows.`),
-    present.some((index, i) => index < present[i - 1]) && ORDER,
-    summary && !summary.items.some((item) => item.code && hasText(item)) && '"## Summary" holds no diagram, diff sketch or tree. Add one in a fenced code block.',
-    evidence && !labelled(evidence, "Before") && '"## Evidence" lacks "**Before:**" with something after it. Show the failing run or the output before the change.',
-    evidence && !labelled(evidence, "After") && '"## Evidence" lacks "**After:**" with something after it. Show the passing run or the output after the change.',
-    danger && !/\*\*Door:\*\*\s*(one|two)-way\b/i.test(prose(danger)) && '"## Merge danger" lacks "**Door:** one-way" or "**Door:** two-way". Say whether a revert can walk the merge back.',
-    danger && !/\*\*Blast radius:\*\*[ \t]*\S/i.test(prose(danger)) && '"## Merge danger" lacks "**Blast radius:**" with a word after it. Name what the merge can affect.',
+    head && !hex.includes(head.toLowerCase()) && `the body does not name the head ${head}. Run the checks at the head and quote their last lines with its SHA, as ADR 0006 asks.`,
+    ...commands.map((command) => {
+      const state = quoted(blocks, command, commands);
+      if (state === "missing") return `no code block quotes "${command}". Run it at the head and quote it with the last lines it printed.`;
+      return state === "bare" && `"${command}" has no output after it in its code block. Add the last lines it printed.`;
+    }),
   ].filter(Boolean);
 }
 
 export function check(body, { head, commands = [] } = {}) {
-  const all = sections(body.replace(/\r\n/g, "\n").split("\n"));
-  if (all.inline.length) return all.inline.map(INLINE_COMMENT);
-  const first = all[0].items[0];
-  return [...checksOutput(first?.code ? first.lines : undefined, { head, commands }), ...skillSections(all)];
+  const all = pieces(body);
+  return [...output(all, { head, commands }), ...template(sections(all))];
 }
