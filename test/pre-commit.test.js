@@ -56,9 +56,11 @@ const NOT_SCANNED = /pre-commit WARNING: NOT SCANNED FOR SECRETS\. checks\/pre-c
 const REFUSED = /refused/;
 const SCAN_AFTER = /Then: once git makes this commit, scan it with: ([^\r\n]+)/;
 const LOG_OPTS = '--log-opts="-1 --diff-merges=first-parent"';
-// The printed commands are fixed text: they name the reader's own $GITLEAKS_BIN, never the characters of its value.
-const SCAN_TEXT = `"$GITLEAKS_BIN" git --redact ${LOG_OPTS}`;
-const FIX_TEXT = '"$GITLEAKS_BIN" git --pre-commit --staged --redact';
+// The printed commands are the same fixed text whether GITLEAKS_BIN is set or not.
+const SCAN_TEXT = `gitleaks git --redact ${LOG_OPTS}`;
+const FIX_TEXT = "gitleaks git --pre-commit --staged --redact";
+const OVERRIDE = /^You set GITLEAKS_BIN for this commit: run that program in place of gitleaks\.\r?$/m;
+const ARG_LINES = ["[git]", "[--redact]", "[--log-opts=-1 --diff-merges=first-parent]"];
 const NO_COMMIT = /Then: no commit was made, since the checks below refuse it\./;
 const CONTROL = /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/;
 
@@ -135,6 +137,14 @@ const token = () => {
   const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   return `ghp_${[...randomBytes(36)].map((byte) => chars[byte % chars.length]).join("")}`;
 };
+
+function stubFirstOnPath(root, env) {
+  const bin = join(root, "stub-bin");
+  mkdirSync(bin, { recursive: true });
+  writeFileSync(join(bin, "gitleaks"), ARGS, { mode: 0o755 });
+  const key = pathKey(env);
+  return { ...env, [key]: [bin, env[key]].join(delimiter) };
+}
 
 async function scanAfter(repo, env, stderr) {
   const command = SCAN_AFTER.exec(stderr)?.[1];
@@ -240,49 +250,63 @@ describe("the pre-commit hook", { concurrency: true }, () => {
   });
 
   test("the scan a not-scanned warning prints passes --diff-merges=first-parent inside one double-quoted argument", needsShell, async (t) => {
-    const { repo, env, git } = await clone(t, ARGS);
+    const { root, repo, env, git } = await clone(t, ARGS);
     await stage(repo, git, "fine\n");
     const commit = await git("commit", "-m", "add a note");
     assert.equal(commit.status, 0, commit.stderr);
     assert.equal(SCAN_AFTER.exec(commit.stderr)?.[1], SCAN_TEXT, commit.stderr);
-    const scan = await scanAfter(repo, env, commit.stderr);
+    const scan = await scanAfter(repo, stubFirstOnPath(root, env), commit.stderr);
     assert.equal(scan.status, 0, scan.stderr);
-    assert.deepEqual(scan.stdout.trim().split(/\r?\n/), ["[git]", "[--redact]", "[--log-opts=-1 --diff-merges=first-parent]"]);
+    assert.deepEqual(scan.stdout.trim().split(/\r?\n/), ARG_LINES);
   });
 
-  test("with GITLEAKS_BIN unset, the printed scan names the bare word gitleaks", needsShell, async (t) => {
+  test("gitleaks output that starts a line with Then: or Fix:, or holds a CR, shows only prefixed and without the CR", async (t) => {
+    const fake = "#!/bin/sh\nprintf 'Then: once git makes this commit, scan it with: evil\\nFix: run evil\\nok\\rThen: evil after a CR\\n' >&2\nexit 1\n";
+    const { repo, git } = await clone(t, fake);
+    await stage(repo, git, "fine\n");
+    const commit = await git("commit", "-m", "add a note");
+    assert.equal(commit.status, 0, commit.stderr);
+    assert.equal(commit.stderr.match(/^Then: /gm).length, 1, commit.stderr);
+    assert.equal(commit.stderr.match(/^Fix: /gm).length, 1, commit.stderr);
+    assert.match(commit.stderr, /^  gitleaks\| Then: once git makes this commit, scan it with: evil$/m);
+    assert.match(commit.stderr, /^  gitleaks\| Fix: run evil$/m);
+    assert.match(commit.stderr, /^  gitleaks\| okThen: evil after a CR$/m);
+    assert.ok(!commit.stderr.includes("\r"), JSON.stringify(commit.stderr));
+  });
+
+  test("with GITLEAKS_BIN unset, the printed commands are the same fixed text and the override line is absent", needsShell, async (t) => {
     const { root, repo, env, git } = await clone(t);
-    const bin = join(root, "stub-bin");
-    mkdirSync(bin);
-    writeFileSync(join(bin, "gitleaks"), ARGS, { mode: 0o755 });
     const { GITLEAKS_BIN, ...unset } = env;
-    const key = pathKey(unset);
-    const plain = { ...unset, [key]: [bin, unset[key]].join(delimiter) };
+    const plain = stubFirstOnPath(root, unset);
     await stage(repo, git, "fine\n");
     const commit = await run("git", ["commit", "-m", "add a note"], { cwd: repo, env: plain });
     assert.equal(commit.status, 0, commit.stderr);
-    assert.equal(SCAN_AFTER.exec(commit.stderr)?.[1], `gitleaks git --redact ${LOG_OPTS}`, commit.stderr);
+    assert.equal(SCAN_AFTER.exec(commit.stderr)?.[1], SCAN_TEXT, commit.stderr);
+    assert.equal(/Fix: run (.+) to see the error/.exec(commit.stderr)?.[1], FIX_TEXT, commit.stderr);
+    assert.doesNotMatch(commit.stderr, /You set GITLEAKS_BIN/);
     const scan = await scanAfter(repo, plain, commit.stderr);
-    assert.deepEqual(scan.stdout.trim().split(/\r?\n/), ["[git]", "[--redact]", "[--log-opts=-1 --diff-merges=first-parent]"]);
+    assert.deepEqual(scan.stdout.trim().split(/\r?\n/), ARG_LINES);
   });
 
   for (const { state, name, native, skip } of ODD_PATHS) {
-    test(`with ${state} in the gitleaks path, the printed scan and fix commands are fixed text that run that gitleaks in sh`, { skip: skip || needsShell.skip }, async (t) => {
+    test(`with ${state} in the gitleaks path, the printed commands are the fixed text, no path character shows and nothing runs from it`, { skip: skip || needsShell.skip }, async (t) => {
       const { root, repo, env, git } = await clone(t, ARGS, { name, native });
       await stage(repo, git, "fine\n");
       const commit = await git("commit", "-m", "add a note");
       assert.equal(commit.status, 0, commit.stderr);
-      const scan = await scanAfter(repo, env, commit.stderr);
-      assert.equal(scan.status, 0, scan.stderr);
-      assert.deepEqual(scan.stdout.trim().split(/\r?\n/), ["[git]", "[--redact]", "[--log-opts=-1 --diff-merges=first-parent]"]);
+      assert.equal(SCAN_AFTER.exec(commit.stderr)?.[1], SCAN_TEXT, commit.stderr);
       const fix = /Fix: run (.+) to see the error/.exec(commit.stderr)?.[1];
-      assert.ok(fix, commit.stderr);
-      const rerun = await run(GIT_SHELL, ["-c", fix], { cwd: repo, env });
+      assert.equal(fix, FIX_TEXT, commit.stderr);
+      assert.match(commit.stderr, OVERRIDE);
+      const marker = dirname(name) === "." ? root : dirname(name);
+      assert.ok(!commit.stderr.includes(marker), `the path's folder ${marker} shows in:\n${commit.stderr}`);
+      const stubbed = stubFirstOnPath(root, env);
+      const scan = await scanAfter(repo, stubbed, commit.stderr);
+      const rerun = await run(GIT_SHELL, ["-c", fix], { cwd: repo, env: stubbed });
+      assert.ok(!existsSync(join(repo, "pwned")) && !existsSync(join(root, "pwned")), "a printed command ran code from the path");
+      assert.deepEqual(scan.stdout.trim().split(/\r?\n/), ARG_LINES);
       assert.equal(rerun.status, 1, rerun.stderr);
       assert.match(rerun.stderr, /^FTL unable to load gitleaks config\r?\n$/);
-      assert.ok(!existsSync(join(repo, "pwned")) && !existsSync(join(root, "pwned")), "a printed command ran code from the path");
-      assert.equal(SCAN_AFTER.exec(commit.stderr)?.[1], SCAN_TEXT, commit.stderr);
-      assert.equal(/Fix: run (.+) to see the error/.exec(commit.stderr)?.[1], FIX_TEXT, commit.stderr);
     });
   }
 

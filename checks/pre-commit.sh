@@ -12,15 +12,15 @@ trap 'rm -rf "$out"' EXIT
 # Every line that holds a variable goes out through printf '%s\n', since dash's echo reads backslash escapes.
 not_scanned() {
   printf '%s\n' "pre-commit WARNING: NOT SCANNED FOR SECRETS. checks/pre-commit.sh did not scan the staged files with gitleaks." "Why: $1" "Fix: $2"
+  if [ -n "${GITLEAKS_BIN:-}" ]; then
+    printf '%s\n' "You set GITLEAKS_BIN for this commit: run that program in place of gitleaks."
+  fi
 }
 
-# The gitleaks command as printed for the reader to paste: fixed text, never the characters of GITLEAKS_BIN's value.
-# When GITLEAKS_BIN is set, the reader's own shell expands "$GITLEAKS_BIN".
+# The commands printed for the reader to paste are fixed text that names gitleaks, whatever GITLEAKS_BIN holds.
 if [ -n "${GITLEAKS_BIN:-}" ]; then
-  prog='"$GITLEAKS_BIN"'
   missing="GITLEAKS_BIN names no program on PATH or on disk"
 else
-  prog=gitleaks
   missing="no gitleaks is on PATH"
 fi
 
@@ -42,14 +42,15 @@ gitleaks_scan() {
     return 1
   fi
   [ "$rc" = 0 ] && [ -s "$out/gitleaks.json" ] && return 0
-  # A broken binary can print raw bytes, so only printable text reaches the terminal.
-  tr -cd '\11\12\15\40-\176' <"$out/gitleaks.out" | head -n 20 >"$out/gitleaks.text"
+  # A broken binary can print raw bytes, so only printable text without CR reaches the terminal.
+  tr -cd '\11\12\40-\176' <"$out/gitleaks.out" | head -n 20 >"$out/gitleaks.text"
   case "$rc" in
-    126|127) why="gitleaks could not run that command (exit $rc): $(head -n 1 "$out/gitleaks.text" | tr -d '\r')." ;;
+    126|127) why="gitleaks could not run that command (exit $rc): $(head -n 1 "$out/gitleaks.text")." ;;
     *) why="gitleaks exited $rc without a findings report." ;;
   esac
-  not_scanned "$why Its output follows, as printable text, 20 lines at most." "run $prog git --pre-commit --staged --redact to see the error, and fix it, or reinstall gitleaks."
-  cat "$out/gitleaks.text"
+  not_scanned "$why Its output follows, as printable text, 20 lines at most." "run gitleaks git --pre-commit --staged --redact to see the error, and fix it, or reinstall gitleaks."
+  # Each line of gitleaks' own output carries a prefix, so none can pass for this hook's Then: or Fix: line.
+  sed 's/^/  gitleaks| /' "$out/gitleaks.text"
   return 2
 }
 
@@ -83,7 +84,7 @@ case "$(cat "$out/gitleaks.rc" 2>/dev/null)" in
     if [ "$refused" = 0 ]; then
       # --diff-merges=first-parent: without it, git log shows a merge commit with no diff, so the scan would miss a conflict's resolution.
       # Double quotes keep the value one argument in sh, and cmd.exe does not treat single quotes as quotes.
-      printf '%s\n' "Then: once git makes this commit, scan it with: $prog git --redact --log-opts=\"-1 --diff-merges=first-parent\"" >&2
+      printf '%s\n' "Then: once git makes this commit, scan it with: gitleaks git --redact --log-opts=\"-1 --diff-merges=first-parent\"" >&2
     else
       echo "Then: no commit was made, since the checks below refuse it." >&2
     fi
