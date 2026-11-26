@@ -7,6 +7,7 @@
     "test": "node --test \"test/**/*.test.js\"",
     "check": "node checks/run.js",
     "check:title": "node checks/run-pr-title.js",
+    "check:body": "node checks/run-pr-body.js",
     "snapshot": "node checks/write-snapshot.js",
     "check:deny": "node checks/run-deny-list.js"
   }
