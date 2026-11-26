@@ -1,4 +1,4 @@
-import { gitRepo } from "./git-repo.js";
+import { gitRepo, stagedRepo } from "./git-repo.js";
 import * as adrLength from "./adr-length.js";
 import * as adrNames from "./adr-names.js";
 import * as auditVerdicts from "./audit-verdicts.js";
@@ -15,7 +15,7 @@ const CHECKS = [adrLength, adrNames, auditVerdicts, agentsPointers, deadLinks, i
 
 const format = ({ path, line, column, message }) => `${path}:${line}${column ? `:${column}` : ""}: ${message}`;
 
-const repo = gitRepo();
+const repo = process.argv.includes("--staged") ? stagedRepo() : gitRepo();
 const failures = CHECKS.flatMap(({ check }) => check(repo));
 failures.forEach((failure) => console.error(format(failure)));
 process.exitCode = failures.length ? 1 : 0;

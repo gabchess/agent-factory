@@ -34,4 +34,5 @@ Node 22 or later. No dependencies.
 npm test       # the checks' own tests
 npm run check  # the checks against this repo
 npm run check:title -- "<title>"  # a PR title against decisions/0005
+npm run hooks  # once per clone: gitleaks and the checks on every commit
 ```
