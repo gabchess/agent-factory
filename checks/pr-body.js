@@ -45,8 +45,11 @@ const pieces = (body) =>
       : [{ type: token.type, tag: token.tag, nesting: token.nesting, content: token.content, depth: token.level }],
   );
 
+// The text a reader sees in one piece. GitHub hides comments and shows no tag or attribute of raw HTML.
 const shown = ({ type, content }) =>
-  type === "text" || type === "code_inline" || type === "image" || CODE.has(type) ? content : type.startsWith("html") ? content.replace(COMMENT, "") : "";
+  type === "text" || type === "code_inline" || type === "image" || CODE.has(type) ? content : type.startsWith("html") ? content.replace(COMMENT, "").replace(/<[^>]*>/g, "") : "";
+// What a reader sees in a run of pieces, with the template's placeholders taken out, in code or not.
+const unplaced = (pieces) => PLACEHOLDERS.reduce((rest, placeholder) => rest.replaceAll(placeholder, ""), pieces.map(shown).join(" "));
 
 // Splits the pieces at each top-level "# " or "## " heading. A "## " section is named by its text in lower case.
 function sections(all) {
@@ -84,15 +87,9 @@ function scopes(section, label, labels) {
   return found;
 }
 
-const visual = (scope) => scope.some(({ type, content }) => (CODE.has(type) && content.trim()) || type === "image" || (type.startsWith("html") && IMAGE.test(content.replace(COMMENT, ""))));
-const filled = (scope) => {
-  const prose = scope.filter(({ type }) => type === "text").map(({ content }) => content).join("");
-  return (
-    WORD.test(PLACEHOLDERS.reduce((rest, placeholder) => rest.replaceAll(placeholder, ""), prose)) ||
-    visual(scope) ||
-    scope.some(({ type, content }) => (type === "code_inline" && WORD.test(content)) || (type.startsWith("html") && WORD.test(shown({ type, content }).replace(/<[^>]*>/g, ""))))
-  );
-};
+const visual = (scope) =>
+  scope.some((piece) => (CODE.has(piece.type) && unplaced([piece]).trim()) || piece.type === "image" || (piece.type.startsWith("html") && IMAGE.test(piece.content.replace(COMMENT, ""))));
+const filled = (scope) => WORD.test(unplaced(scope)) || visual(scope);
 
 function field(section, labels, heading, { label, placeholder }) {
   if (!label) return visual(section) ? [] : [`"## ${heading}" holds no code block or image in place of "${placeholder}". Add one.`];
@@ -101,7 +98,7 @@ function field(section, labels, heading, { label, placeholder }) {
   if (!found.every(filled)) return [`"**${label}:**" under "## ${heading}" holds nothing but "${placeholder}", a comment or markup. Write it after the label, before the next label or the end of its list item.`];
   // A placeholder that offers choices, as "<one-way or two-way>" does, needs one of them.
   const choices = /^<(\S+) or (\S+)>$/.exec(placeholder)?.slice(1);
-  const says = (scope) => choices.some((choice) => new RegExp(`(?<![\\p{L}-])${choice}(?![\\p{L}-])`, "iu").test(scope.map(shown).join(" ")));
+  const says = (scope) => choices.some((choice) => new RegExp(`(?<![\\p{L}-])${choice}(?![\\p{L}-])`, "iu").test(unplaced(scope)));
   if (choices && !found.every(says)) return [`"**${label}:**" under "## ${heading}" does not say ${choices.map((choice) => `"${choice}"`).join(" or ")}. Write one of them.`];
   return [];
 }
@@ -121,10 +118,13 @@ function template(all) {
   return failures.length ? [...failures, PIN] : [];
 }
 
-// A line of a code block holds the command, alone or after a "$ " prompt, and the rest of the line is its output.
+// A line of a code block runs the command when it is the command exactly, after a "$ " prompt or alone, or when it is
+// the command, then a tab or two spaces, then its output. What follows a typed command is an argument, never output.
 const typed = (line, command) => {
-  const rest = line.trim().replace(/^\$\s+/, "");
-  return rest.startsWith(command) && (rest.length === command.length || /\s/.test(rest[command.length])) ? rest.slice(command.length) : undefined;
+  const prompted = /^\s*\$\s+(.*)$/.exec(line);
+  if (prompted) return prompted[1].trim() === command ? "" : undefined;
+  const rest = line.trim();
+  return rest === command ? "" : rest.startsWith(command) && /^(?:\t| {2,})\S/.test(rest.slice(command.length)) ? rest.slice(command.length) : undefined;
 };
 
 // "output" when a code block quotes the command with output on its line or on the next line that is not another command.

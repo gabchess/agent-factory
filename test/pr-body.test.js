@@ -28,8 +28,9 @@ for (const line of TEMPLATE.split("\n")) {
 }
 const REQUIRED = SECTIONS.flatMap(({ heading, fields }) => fields.filter((field) => !field.placeholder.startsWith("<optional:")).map((field) => ({ heading, ...field })));
 
-const URL_PIN = "https://github.com/mattpocock/skills/blob/e484a8095543718ced436b9b49a8160ed4554000/skills/engineering/pr/SKILL.md";
-const PIN = `the sections and labels above are the pr skill's template at mattpocock/skills e484a80 (${URL_PIN}). If your pr skill writes other ones, it is newer than this pin: write the body to this template, or move the pin as checks/README.md says.`;
+const COMMIT = /mattpocock\/skills\/tree\/([0-9a-f]{40})\//.exec(read("skill/UPSTREAM.md"))[1];
+const URL_PIN = `https://github.com/mattpocock/skills/blob/${COMMIT}/skills/engineering/pr/SKILL.md`;
+const PIN = `the sections and labels above are the pr skill's template at mattpocock/skills ${COMMIT.slice(0, 7)} (${URL_PIN}). If your pr skill writes other ones, it is newer than this pin: write the body to this template, or move the pin as checks/README.md says.`;
 const ORDER = 'the sections are out of order. Put them in the template\'s order: "## Summary", "## Evidence", "## Merge Danger".';
 const missing = (heading) => `the body has no "## ${heading}" section. Add it as the pr skill's template writes it.`;
 const noVisual = (heading, placeholder) => `"## ${heading}" holds no code block or image in place of "${placeholder}". Add one.`;
@@ -47,7 +48,6 @@ test("the check's template is the pr skill's own, and the check, the copy and AG
   assert.ok(REQUIRED.length >= 5, "the copied skill holds a template with its fields");
   assert.deepEqual(prBody.TEMPLATE, SECTIONS);
   assert.equal(prBody.SKILL_URL, URL_PIN);
-  assert.match(read("skill/UPSTREAM.md"), /e484a8095543718ced436b9b49a8160ed4554000/);
   assert.ok(readFileSync(fileURLToPath(new URL("../AGENTS.md", import.meta.url)), "utf8").includes(`(${URL_PIN})`));
 });
 
@@ -104,6 +104,9 @@ test("a label counts only as markup outside code, with content of its own under 
   assert.deepEqual(fails("separate-note"), [empty("Evidence", "After", after.placeholder), PIN]);
   assert.deepEqual(check(body("fail/punctuation")), [empty("Evidence", "Before", before.placeholder), empty("Evidence", "After", after.placeholder), PIN]);
   assert.deepEqual(check(body("fail/second-pair")), [empty("Evidence", "After", after.placeholder), PIN]);
+  assert.deepEqual(check(body("fail/code-placeholders")), [...REQUIRED.map(unfilled), PIN]);
+  assert.deepEqual(check(body("fail/door-placeholder-html")), [noChoice("Merge Danger", "Door"), PIN]);
+  assert.deepEqual(check(body("fail/door-placeholder-text")), [noChoice("Merge Danger", "Door"), PIN]);
   assert.deepEqual(fails("inline-comment"), [empty("Evidence", "Before", before.placeholder), PIN]);
   assert.deepEqual(fails("out-of-order"), [ORDER, PIN]);
   assert.deepEqual(fails("no-sections"), [missing("Summary"), missing("Evidence"), missing("Merge Danger"), PIN]);
@@ -124,6 +127,9 @@ test("with --head and --command, the body names the head and a code block quotes
   assert.deepEqual(fails("commands"), [noOutput("npm test"), noCommand("npm run check")]);
   assert.deepEqual(fails("no-checks"), [noHead(HEAD), ...NPM.map(noCommand)]);
   assert.deepEqual(fails("hidden-head"), [noHead(HEAD)]);
+  assert.deepEqual(fails("head-in-href"), [noHead(HEAD)]);
+  assert.deepEqual(check(body("pass/head-in-link"), { head: HEAD, commands: NPM }), []);
+  assert.deepEqual(fails("filtered-command"), [noCommand("npm test")]);
   assert.deepEqual(check(body("fail/no-checks")), []);
   assert.deepEqual(check(body("fail/other-sha"), { commands: NPM }), []);
 });
