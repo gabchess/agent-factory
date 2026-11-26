@@ -8,7 +8,7 @@ import { check } from "../checks/pr-body.js";
 const HEAD = "1f0e2d3c4b5a69788796a5b4c3d2e1f0a9b8c7d6";
 const COMMANDS = ["npm test", "npm run check"];
 const path = (name) => fileURLToPath(new URL(`./fixtures/pr-body/${name}.md`, import.meta.url));
-const body = (name) => readFileSync(path(name), "utf8");
+const body = (name) => readFileSync(path(name), "utf8").replace(/\r\n/g, "\n");
 const RUN = fileURLToPath(new URL("../checks/run-pr-body.js", import.meta.url));
 
 const OPEN = 'the body does not open with the checks\' output. Start it with one fenced code block, before "## Summary", that names the head SHA and holds each check command as "$ <command>" with the last lines it printed.';
