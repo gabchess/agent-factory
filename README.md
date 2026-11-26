@@ -28,7 +28,7 @@ Orchestrator → control the flow → structure outputs → execute actions → 
 
 ## Checks
 
-Node 22 or later. No dependencies.
+Node 22 or later. No dependencies. The pre-commit hook that `npm run hooks` installs also needs gitleaks.
 
 ```sh
 npm test       # the checks' own tests
