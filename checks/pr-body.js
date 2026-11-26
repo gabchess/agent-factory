@@ -46,13 +46,13 @@ const pieces = (body) =>
   );
 
 // The text a reader sees in one piece. GitHub hides comments and shows no tag or attribute of raw HTML.
-// A tag that formats text inside a line vanishes; any other tag, such as <br>, <p> or <summary>, ends the line.
-const INLINE_TAG = /^<\/?(?:a|abbr|b|cite|code|del|em|i|img|ins|kbd|mark|q|s|samp|small|span|strong|sub|sup|u|var)\b/i;
+// <br> and a block tag, such as <p>, <li> or <summary>, end the line; every other tag vanishes, as <b> or <wbr> does.
+const BREAK_TAG = /^<\/?(?:address|article|aside|blockquote|br|dd|details|div|dl|dt|figcaption|figure|footer|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|summary|table|tbody|td|tfoot|th|thead|tr|ul)\b/i;
 const shown = ({ type, content }) =>
   type === "text" || type === "code_inline" || type === "image" || CODE.has(type)
     ? content
     : type.startsWith("html")
-      ? content.replace(COMMENT, "").replace(/<[^>]*>/g, (tag) => (INLINE_TAG.test(tag) ? "" : "\n"))
+      ? content.replace(COMMENT, "").replace(/<[^>]*>/g, (tag) => (BREAK_TAG.test(tag) ? "\n" : ""))
       : type === "softbreak" || type === "hardbreak" ? "\n" : "";
 // The text a reader sees in a run of pieces: inline pieces run together as they render, and each block stands on its own lines.
 const visible = (pieces) => pieces.map((piece) => (piece.inline ? shown(piece) : `\n${shown(piece)}\n`)).join("");

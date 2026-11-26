@@ -137,6 +137,7 @@ test("with --head and --command, the body names the head and a code block quotes
   assert.deepEqual(fails("filtered-command"), [noCommand("npm test")]);
   assert.deepEqual(check(body("pass/tabbed-output"), { head: HEAD, commands: NPM }), []);
   assert.deepEqual(check(body("pass/br-breaks"), { head: HEAD, commands: NPM }), []);
+  assert.deepEqual(check(body("pass/inline-tags"), { head: HEAD, commands: NPM }), []);
   assert.deepEqual(check(body("fail/no-checks")), []);
   assert.deepEqual(check(body("fail/other-sha"), { commands: NPM }), []);
 });
