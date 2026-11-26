@@ -18,6 +18,7 @@ The cost:
 - Each clone runs `npm run hooks` once. A worktree on a branch from before this hook cannot commit until it is rebased onto main.
 - A commit runs the checked-out branch's own `checks/`, as `npm test` on that branch does, so a commit on someone else's branch runs their code. An edit that makes a check pass everything goes through the hook, since the hook runs the edited check; only the check's tests catch it, at the PR head.
 - No protection is left when `GITLEAKS_BIN` points at a broken program or one that always passes. Both this hook and the machine's global hook read it, so a secret lands with only a warning, or with none, and CI runs no gitleaks.
+- A `.gitleaks.toml` at the repo top whose allowlist covers every path silences both hooks, since gitleaks reads it from the repo: with `paths = [".*"]` a staged `ghp_` token scanned as "no leaks found", exit 0.
 
 ## Considered options
 

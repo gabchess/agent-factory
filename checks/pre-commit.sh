@@ -15,9 +15,16 @@ not_scanned() {
   echo "Fix: $2"
 }
 
+# The gitleaks command as printed for the reader to paste: double quotes only around a path with a space.
+case "$GITLEAKS" in
+  *" "*) prog="\"$GITLEAKS\"" ;;
+  *) prog="$GITLEAKS" ;;
+esac
+
 gitleaks_scan() {
   if ! command -v "$GITLEAKS" >/dev/null 2>&1; then
-    if [ -e "$GITLEAKS" ]; then
+    # Only a path can exist without running; a bare name like "gitleaks" is looked up on PATH, never in this folder.
+    if case "$GITLEAKS" in */* | *\\*) [ -e "$GITLEAKS" ] ;; *) false ;; esac; then
       not_scanned "\"$GITLEAKS\" exists but will not execute." "reinstall gitleaks (winget install Gitleaks.Gitleaks, brew install gitleaks, or your package manager), or set GITLEAKS_BIN to a gitleaks that runs."
     else
       not_scanned "\"$GITLEAKS\" is not installed." "install gitleaks (winget install Gitleaks.Gitleaks, brew install gitleaks, or your package manager), or set GITLEAKS_BIN to its path."
@@ -32,13 +39,14 @@ gitleaks_scan() {
     return 1
   fi
   [ "$rc" = 0 ] && [ -s "$out/gitleaks.json" ] && return 0
+  # A broken binary can print raw bytes, so only printable text reaches the terminal.
+  tr -cd '\11\12\15\40-\176' <"$out/gitleaks.out" | head -n 20 >"$out/gitleaks.text"
   case "$rc" in
-    126|127) why="\"$GITLEAKS\" exists but will not execute (exit $rc)." ;;
+    126|127) why="gitleaks could not run that command (exit $rc): $(head -n 1 "$out/gitleaks.text" | tr -d '\r')." ;;
     *) why="gitleaks exited $rc without a findings report." ;;
   esac
-  not_scanned "$why Its output follows, as printable text, 20 lines at most." "run \"$GITLEAKS\" git --pre-commit --staged --redact to see the error, and fix it, or reinstall gitleaks."
-  # A broken binary can print raw bytes, so only printable text reaches the terminal.
-  tr -cd '\11\12\15\40-\176' <"$out/gitleaks.out" | head -n 20
+  not_scanned "$why Its output follows, as printable text, 20 lines at most." "run $prog git --pre-commit --staged --redact to see the error, and fix it, or reinstall gitleaks."
+  cat "$out/gitleaks.text"
   return 2
 }
 
@@ -71,7 +79,8 @@ case "$(cat "$out/gitleaks.rc" 2>/dev/null)" in
     cat "$out/gitleaks.log" >&2
     if [ "$refused" = 0 ]; then
       # --diff-merges=first-parent: without it, git log shows a merge commit with no diff, so the scan would miss a conflict's resolution.
-      echo "Then: once git makes this commit, scan it with: \"$GITLEAKS\" git --redact --log-opts='-1 --diff-merges=first-parent'" >&2
+      # Double quotes keep the value one argument in sh, cmd.exe and PowerShell alike.
+      echo "Then: once git makes this commit, scan it with: $prog git --redact --log-opts=\"-1 --diff-merges=first-parent\"" >&2
     else
       echo "Then: no commit was made, since the checks below refuse it." >&2
     fi
