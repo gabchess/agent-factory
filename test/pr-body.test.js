@@ -141,6 +141,7 @@ test("with --head and --command, the body names the head and a code block quotes
   assert.deepEqual(fails("textarea-split"), [noHead(HEAD)]);
   assert.deepEqual(check(body("pass/textarea-after"), { head: HEAD, commands: NPM }), []);
   assert.deepEqual(check(body("pass/custom-tags"), { head: HEAD, commands: NPM }), []);
+  assert.deepEqual(fails("quoted-attribute"), [noHead(HEAD), empty("Evidence", "Before", "<screenshot/output/failing test run>"), PIN]);
   assert.deepEqual(fails("custom-tag"), [
     empty("Evidence", "Before", "<screenshot/output/failing test run>"),
     empty("Merge Danger", "Blast Radius", "<one-word description>"),

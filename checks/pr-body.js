@@ -31,7 +31,7 @@ const markdown = new MarkdownIt({ html: true });
 const COMMENT = /<!--(?:-?>|[^]*?(?:-->|$))/g;
 const WORD = /[\p{L}\p{N}]/u;
 // A tag name ends at a space, a slash or ">", so <title-bar> is no <title> and <img-x> is no <img>.
-const IMAGE = /<(?:img|video)(?=[\s/>])/i;
+const IMAGE = /^<(?:img|video)(?=[\s/>])/i;
 const PLACEHOLDERS = TEMPLATE.flatMap(({ fields }) => fields.map(({ placeholder }) => placeholder));
 const CODE = new Set(["fence", "code_block"]);
 
@@ -51,11 +51,13 @@ const pieces = (body) =>
 // except the tags GitHub's tag filter shows as text, such as <textarea>.
 const SHOWN_TAG = /^<\/?(?:iframe|noembed|noframes|plaintext|script|style|textarea|title|xmp)(?=[\s/>])/i;
 const BREAK_TAG = /^<\/?(?:address|article|aside|blockquote|br|dd|details|div|dl|dt|figcaption|figure|footer|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|summary|table|tbody|td|tfoot|th|thead|tr|ul)(?=[\s/>])/i;
+// A whole tag, with a ">" inside a quoted attribute value kept inside the tag.
+const TAG = /<(?:[^>"']|"[^"]*"|'[^']*')*>/g;
 const shown = ({ type, content }) =>
   type === "text" || type === "code_inline" || type === "image" || CODE.has(type)
     ? content
     : type.startsWith("html")
-      ? content.replace(COMMENT, "").replace(/<[^>]*>/g, (tag) => (SHOWN_TAG.test(tag) ? tag : BREAK_TAG.test(tag) ? "\n" : ""))
+      ? content.replace(COMMENT, "").replace(TAG, (tag) => (SHOWN_TAG.test(tag) ? tag : BREAK_TAG.test(tag) ? "\n" : ""))
       : type === "softbreak" || type === "hardbreak" ? "\n" : "";
 // The text a reader sees in a run of pieces: inline pieces run together as they render, and each block stands on its own lines.
 const visible = (pieces) => pieces.map((piece) => (piece.inline ? shown(piece) : `\n${shown(piece)}\n`)).join("");
@@ -99,7 +101,7 @@ function scopes(section, label, labels) {
 }
 
 const visual = (scope) =>
-  scope.some((piece) => (CODE.has(piece.type) && unplaced([piece]).trim()) || piece.type === "image" || (piece.type.startsWith("html") && IMAGE.test(piece.content.replace(COMMENT, ""))));
+  scope.some((piece) => (CODE.has(piece.type) && unplaced([piece]).trim()) || piece.type === "image" || (piece.type.startsWith("html") && (piece.content.replace(COMMENT, "").match(TAG) ?? []).some((tag) => IMAGE.test(tag))));
 const filled = (scope) => WORD.test(unplaced(scope)) || visual(scope);
 
 function field(section, labels, heading, { label, placeholder }) {
