@@ -24,12 +24,13 @@ const run = (command, args, options) =>
     child.on("close", (status) => done({ status, ...output }));
   });
 
-async function clone(t, gitleaks = PASS, { name = "gitleaks", mode = 0o755 } = {}) {
+async function clone(t, gitleaks = PASS, { name = "gitleaks", mode = 0o755, native = false } = {}) {
   const root = mkdtempSync(join(tmpdir(), "hook-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const stub = join(root, name);
+  mkdirSync(dirname(stub), { recursive: true });
   if (gitleaks !== null) writeFileSync(stub, gitleaks, { mode });
-  const env = { ...process.env, GIT_CONFIG_GLOBAL: join(root, "gitconfig"), GIT_CONFIG_NOSYSTEM: "1", GITLEAKS_BIN: slash(stub) };
+  const env = { ...process.env, GIT_CONFIG_GLOBAL: join(root, "gitconfig"), GIT_CONFIG_NOSYSTEM: "1", GITLEAKS_BIN: native ? stub : slash(stub) };
   writeFileSync(env.GIT_CONFIG_GLOBAL, "[user]\n\tname = t\n\temail = t@example.invalid\n");
   const repo = join(root, "repo");
   cpSync(CHECKS, join(repo, "checks"), { recursive: true, filter: (path) => !path.endsWith("README.md") });
@@ -138,6 +139,18 @@ async function scanAfter(repo, env, stderr) {
   return run(GIT_SHELL, ["-c", command], { cwd: repo, env });
 }
 
+// GITLEAKS_BIN paths whose printed commands must still run when pasted into sh. Windows forbids " in a file name, and its own paths use backslashes.
+const ODD_PATHS = [
+  { state: "an apostrophe", name: join("o'brien", "gitleaks") },
+  { state: "a space", name: join("with space", "gitleaks") },
+  { state: "a dollar sign", name: join("cost$HOME", "gitleaks") },
+  { state: "a backtick", name: join("tick`id`", "gitleaks") },
+  { state: "a double quote", name: join('say"hi', "gitleaks"), skip: process.platform === "win32" && "Windows forbids \" in a file name" },
+  process.platform === "win32"
+    ? { state: "backslashes", name: "gitleaks", native: true }
+    : { state: "a backslash", name: join("back\\slash", "gitleaks"), native: true },
+];
+
 const CHECKS_CANNOT_RUN = [
   ["node is not on PATH", withoutNode, /pre-commit refused by checks:\r?\nchecks\/run\.js cannot run: node is not installed\. Fix: install Node 22 or later/],
   ["checks/run.js is missing", (repo) => rmSync(join(repo, "checks", "run.js")), /pre-commit refused by checks:\r?\nchecks\/run\.js cannot run: it is missing from this checkout\. Fix: /],
@@ -229,6 +242,23 @@ describe("the pre-commit hook", { concurrency: true }, () => {
     assert.equal(scan.status, 0, scan.stderr);
     assert.deepEqual(scan.stdout.trim().split(/\r?\n/), ["[git]", "[--redact]", "[--log-opts=-1 --diff-merges=first-parent]"]);
   });
+
+  for (const { state, name, native, skip } of ODD_PATHS) {
+    test(`with ${state} in the gitleaks path, the printed scan and fix commands run that gitleaks when pasted into sh`, { skip: skip || needsShell.skip }, async (t) => {
+      const { repo, env, git } = await clone(t, ARGS, { name, native });
+      await stage(repo, git, "fine\n");
+      const commit = await git("commit", "-m", "add a note");
+      assert.equal(commit.status, 0, commit.stderr);
+      const scan = await scanAfter(repo, env, commit.stderr);
+      assert.equal(scan.status, 0, scan.stderr);
+      assert.deepEqual(scan.stdout.trim().split(/\r?\n/), ["[git]", "[--redact]", "[--log-opts=-1 --diff-merges=first-parent]"]);
+      const fix = /Fix: run (.+) to see the error/.exec(commit.stderr)?.[1];
+      assert.ok(fix, commit.stderr);
+      const rerun = await run(GIT_SHELL, ["-c", fix], { cwd: repo, env });
+      assert.equal(rerun.status, 1, rerun.stderr);
+      assert.match(rerun.stderr, /^FTL unable to load gitleaks config\r?\n$/);
+    });
+  }
 
   const realGitleaks = { skip: !REAL_GITLEAKS ? "gitleaks is not on PATH" : needsShell.skip };
 

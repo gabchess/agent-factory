@@ -15,9 +15,10 @@ not_scanned() {
   echo "Fix: $2"
 }
 
-# The gitleaks command as printed for the reader to paste: double quotes only around a path with a space.
+# The gitleaks command as printed for the reader to paste into sh. A value with only safe characters, such as the bare
+# name gitleaks, stays bare. Any other goes in double quotes, with \ " $ and ` escaped, since sh reads those inside them.
 case "$GITLEAKS" in
-  *" "*) prog="\"$GITLEAKS\"" ;;
+  *[!A-Za-z0-9/._:+@=,-]*) prog="\"$(printf '%s' "$GITLEAKS" | sed 's/[\\"$`]/\\&/g')\"" ;;
   *) prog="$GITLEAKS" ;;
 esac
 
@@ -79,7 +80,7 @@ case "$(cat "$out/gitleaks.rc" 2>/dev/null)" in
     cat "$out/gitleaks.log" >&2
     if [ "$refused" = 0 ]; then
       # --diff-merges=first-parent: without it, git log shows a merge commit with no diff, so the scan would miss a conflict's resolution.
-      # Double quotes keep the value one argument in sh, cmd.exe and PowerShell alike.
+      # Double quotes keep the value one argument in sh, and cmd.exe does not treat single quotes as quotes.
       echo "Then: once git makes this commit, scan it with: $prog git --redact --log-opts=\"-1 --diff-merges=first-parent\"" >&2
     else
       echo "Then: no commit was made, since the checks below refuse it." >&2
