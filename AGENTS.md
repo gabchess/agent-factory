@@ -45,6 +45,7 @@ Writing:
 
 - When you write anything for Gabriel or in his name (a PR, commit, Linear ticket, README, doc, his GitHub profile, his website gabeonchain.com, a post or an email), read [the gabe-voice skill](https://github.com/gabchess/skills/blob/main/skills/disciplines/gabe-voice/SKILL.md). Its "Surfaces" table gives the rules for each place.
 - When you title a PR, read [ADR 0005](https://github.com/gabchess/agent-factory/blob/main/decisions/0005-pr-titles-follow-conventional-commits.md).
+- When you write a PR body, in any repo, copy [`templates/pr/what-it-can-break.md`](https://github.com/gabchess/agent-factory/blob/main/templates/pr/what-it-can-break.md) into it and fill it by its folder's `README.md`.
 - When you decide whether something goes in a repo or in Linear, read [ADR 0004](https://github.com/gabchess/agent-factory/blob/main/decisions/0004-the-repo-holds-standards-linear-holds-planning.md).
 
 Building:
